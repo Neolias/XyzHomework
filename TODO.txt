@@ -1,0 +1,11 @@
+- Camera zoom not resetting while aiming with a sniper rifle and sprinting
+- Rifle aiming leg animation looks weird
+- Multiple mechanics need to be replicated
+	- Homework
+		- Sliding
+	- Proning
+	- Wall Running
+	- Swimming Up
+	- Knife Attacks
+	- Ziplines/Ladders
+	- Looping Platforms
