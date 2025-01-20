@@ -8,9 +8,21 @@ public class XyzHomework : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Niagara", "UMG" });
+		PublicDependencyModuleNames.AddRange(new string[] {
+			"Core",
+			"CoreUObject", 
+			"Engine", 
+			"InputCore", 
+			"Niagara", 
+			"UMG",
+            "OnlineSubsystem",
+            "OnlineSubsystemUtils"
+        });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+        DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
+
+
+        PrivateDependencyModuleNames.AddRange(new string[] {  });
 
 		PrivateIncludePaths.AddRange(new string[] { Name });
 
