@@ -27,14 +27,19 @@ protected:
 	virtual void SetupInputComponent() override;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets")
 	TSubclassOf<UPlayerHUDWidget> PlayerHUDWidgetClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets")
+	TSubclassOf<UUserWidget> MainMenuWidgetClass;
 
 private:
 	TWeakObjectPtr<class AXyzBaseCharacter> CachedBaseCharacter;
 	bool bIgnoresFPCameraPitch = false;
 	UPROPERTY()
 	UPlayerHUDWidget* PlayerHUDWidget;
+	UPROPERTY()
+	UUserWidget* MainMenuWidget;
 
 	void CreateAndInitializeHUDWidgets();
+	void ToggleMainMenu();
 
 	void MoveForward(float Value);
 	void MoveRight(float Value);

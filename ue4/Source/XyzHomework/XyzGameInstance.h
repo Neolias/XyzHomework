@@ -19,16 +19,13 @@ class XYZHOMEWORK_API UXyzGameInstance : public UGameInstance
 
 public:
 	UXyzGameInstance();
-
+	void LaunchLobby(uint32 MaxPlayers_In, FName ServerName_In, bool bIsLAN);
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
 	virtual bool ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& Ar, UObject* Executor) override;
+	virtual void Init() override;
+	virtual void Shutdown() override;
 
 	FOnMatchFound OnMatchFound;
-
-	virtual void Init() override;
-
-	virtual void Shutdown() override;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

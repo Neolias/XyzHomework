@@ -18,6 +18,13 @@ UXyzGameInstance::UXyzGameInstance()
 	OnDestroySessionCompleteDelegate = FOnDestroySessionCompleteDelegate::CreateUObject(this, &UXyzGameInstance::OnDestroySessionComplete);
 }
 
+void UXyzGameInstance::LaunchLobby(uint32 MaxPlayers_In, FName ServerName_In, bool bIsLAN)
+{
+	MaxPlayers = MaxPlayers_In;
+	ServerName = ServerName_In;
+	HostSession(GetPrimaryPlayerUniqueId(), ServerName, bIsLAN, true, MaxPlayers);
+}
+
 void UXyzGameInstance::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

@@ -66,6 +66,8 @@ void AXyzPlayerController::SetupInputComponent()
 	InputComponent->BindAction("ActivateNextWeaponMode", EInputEvent::IE_Pressed, this, &AXyzPlayerController::ActivateNextWeaponMode);
 	InputComponent->BindAction("UsePrimaryMeleeAttack", EInputEvent::IE_Pressed, this, &AXyzPlayerController::UsePrimaryMeleeAttack);
 	InputComponent->BindAction("UseSecondaryMeleeAttack", EInputEvent::IE_Pressed, this, &AXyzPlayerController::UseSecondaryMeleeAttack);
+	FInputActionBinding& ToggleMenuBinding = InputComponent->BindAction("ToggleMainMenu", EInputEvent::IE_Pressed, this, &AXyzPlayerController::ToggleMainMenu);
+	ToggleMenuBinding.bExecuteWhenPaused = true;
 
 	InputComponent->BindAxis("TurnAtRate", this, &AXyzPlayerController::TurnAtRate);
 	InputComponent->BindAxis("LookUpAtRate", this, &AXyzPlayerController::LookUpAtRate);
@@ -73,6 +75,11 @@ void AXyzPlayerController::SetupInputComponent()
 
 void AXyzPlayerController::CreateAndInitializeHUDWidgets()
 {
+	if (!IsValid(MainMenuWidget))
+	{
+		MainMenuWidget = CreateWidget<UUserWidget>(GetWorld(), MainMenuWidgetClass);
+	}
+
 	if (!IsValid(PlayerHUDWidget) && IsValid(PlayerHUDWidgetClass))
 	{
 		PlayerHUDWidget = CreateWidget<UPlayerHUDWidget>(GetWorld(), PlayerHUDWidgetClass);
@@ -129,6 +136,31 @@ void AXyzPlayerController::CreateAndInitializeHUDWidgets()
 				CharacterAttributesComponent->OnOxygenChanged.AddUFunction(CharacterAttributesCenterWidget, FName("OnOxygenChanged"));
 			}
 		}
+	}
+}
+
+void AXyzPlayerController::ToggleMainMenu()
+{
+	if (!IsValid(MainMenuWidget) || !IsValid(PlayerHUDWidget))
+	{
+		return;
+	}
+
+	if (MainMenuWidget->IsVisible())
+	{
+		MainMenuWidget->RemoveFromParent();
+		PlayerHUDWidget->AddToViewport();
+		SetInputMode(FInputModeGameOnly{});
+		SetPause(false);
+		bShowMouseCursor = false;
+	}
+	else
+	{
+		MainMenuWidget->AddToViewport();
+		PlayerHUDWidget->RemoveFromParent();
+		SetInputMode(FInputModeGameAndUI{});
+		SetPause(true);
+		bShowMouseCursor = true;
 	}
 }
 
