@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "UI/Widgets/CharacterAttributesWidget.h"
+#include "CharacterAttributesWidget.h"
 
 void UCharacterAttributesWidget::OnHealthChanged(const float NewHealthPercentage)
 {

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI/Widgets/NetworkWidget.h"
+#include "NetworkWidget.h"
 #include "HostSessionWidget.generated.h"
 
 /**

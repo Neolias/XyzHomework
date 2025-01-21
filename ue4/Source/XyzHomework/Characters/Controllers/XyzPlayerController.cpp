@@ -6,10 +6,10 @@
 #include "Components/CharacterComponents/CharacterAttributesComponent.h"
 #include "Components/CharacterComponents/CharacterEquipmentComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "UI/Widgets/PlayerHUDWidget.h"
-#include "UI/Widgets/ReticleWidget.h"
-#include "UI/Widgets/WeaponAmmoWidget.h"
-#include "UI/Widgets/CharacterAttributesWidget.h"
+#include "UI/Widgets/PlayerHUD/PlayerHUDWidget.h"
+#include "UI/Widgets/PlayerHUD/ReticleWidget.h"
+#include "UI/Widgets/PlayerHUD/WeaponAmmoWidget.h"
+#include "UI/Widgets/PlayerHUD/CharacterAttributesWidget.h"
 
 void AXyzPlayerController::SetPawn(APawn* InPawn)
 {
@@ -137,6 +137,8 @@ void AXyzPlayerController::CreateAndInitializeHUDWidgets()
 			}
 		}
 	}
+	SetInputMode(FInputModeGameOnly{});
+	bShowMouseCursor = false;
 }
 
 void AXyzPlayerController::ToggleMainMenu()
