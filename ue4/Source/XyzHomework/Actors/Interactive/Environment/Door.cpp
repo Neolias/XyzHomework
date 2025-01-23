@@ -54,6 +54,11 @@ void ADoor::Interact(APawn* InteractingPawn)
 	bIsOpen = !bIsOpen;
 }
 
+FName ADoor::GetActionName()
+{
+	return ActionName;
+}
+
 void ADoor::UpdateDoorAnimTimeline(float Alpha) const
 {
 	const float NewYawRotation = FMath::Lerp(MinMaxAnimAngles.X, MinMaxAnimAngles.Y, FMath::Clamp(Alpha, 0.0f, 1.0f));

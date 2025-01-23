@@ -67,6 +67,15 @@ void AXyzBaseCharacter::BeginPlay()
 	CharacterAttributesComponent->OnDeathDelegate.AddDynamic(this, &AXyzBaseCharacter::OnDeath);
 }
 
+void AXyzBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	if (OnInteractableFound.IsBound())
+	{
+		OnInteractableFound.Clear();
+	}
+}
+
 void AXyzBaseCharacter::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -1073,6 +1082,17 @@ void AXyzBaseCharacter::LineTraceInteractableObject()
 	if (CurrentInteractableObject != HitResult.GetActor())
 	{
 		CurrentInteractableObject = HitResult.GetActor();
+		if (OnInteractableFound.IsBound())
+		{
+			if (CurrentInteractableObject.GetInterface())
+			{
+				OnInteractableFound.Broadcast(CurrentInteractableObject->GetActionName());
+			}
+			else
+			{
+				OnInteractableFound.Broadcast(NAME_None);
+			}
+		}
 	}
 }
 

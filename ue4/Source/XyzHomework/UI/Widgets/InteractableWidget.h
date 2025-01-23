@@ -13,5 +13,10 @@ UCLASS()
 class XYZHOMEWORK_API UInteractableWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
+public:
+	void SetKeyName(FName KeyName);
+
+protected:
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* KeyText;	
 };

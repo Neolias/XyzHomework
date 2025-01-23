@@ -10,6 +10,7 @@
  * 
  */
 
+class UInteractableWidget;
 class UCharacterAttributesWidget;
 
 UCLASS()
@@ -22,6 +23,8 @@ public:
 	class UWeaponAmmoWidget* GetWeaponAmmoWidget();
 	UCharacterAttributesWidget* GetCharacterAttributesWidget();
 	UCharacterAttributesWidget* GetCharacterAttributesCenterWidget();
+	void SetInteractableKeyText(FName KeyName);
+	void ShowInteractableKey(bool bIsVisible);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets")
@@ -32,5 +35,7 @@ protected:
 	FName CharacterAttributesWidgetName = "WBP_CharacterAttributes";
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets")
 	FName CharacterAttributesCenterWidgetName = "WBP_CharacterAttributesCenter";
+	UPROPERTY(meta = (BindWidget))
+	UInteractableWidget* InteractableWidget;
 	
 };

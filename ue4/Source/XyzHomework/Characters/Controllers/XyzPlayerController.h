@@ -74,6 +74,8 @@ private:
 	void UsePrimaryMeleeAttack();
 	void UseSecondaryMeleeAttack();
 	void InteractWithObject();
+	UFUNCTION()
+	void OnInteractableObjectFound(FName ActionName);
 
 	void TurnAtRate(float Value);
 	void LookUpAtRate(float Value);

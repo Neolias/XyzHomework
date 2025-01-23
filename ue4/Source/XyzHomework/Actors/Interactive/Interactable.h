@@ -19,4 +19,6 @@ class XYZHOMEWORK_API IInteractable
 
 public:
 	virtual void Interact(APawn* InteractingPawn) PURE_VIRTUAL(IInteractable::Interact, )
+	virtual FName GetActionName() PURE_VIRTUAL(IInteractable::GetActionName, return FName(NAME_None);)
+
 };

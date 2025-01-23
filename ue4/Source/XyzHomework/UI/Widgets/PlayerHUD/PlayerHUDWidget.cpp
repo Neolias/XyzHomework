@@ -7,6 +7,7 @@
 #include "WeaponAmmoWidget.h"
 #include "CharacterAttributesWidget.h"
 #include "Blueprint/WidgetTree.h"
+#include "UI/Widgets/InteractableWidget.h"
 
 UReticleWidget* UPlayerHUDWidget::GetReticleWidget()
 {
@@ -27,3 +28,29 @@ UCharacterAttributesWidget* UPlayerHUDWidget::GetCharacterAttributesCenterWidget
 {
 	return WidgetTree->FindWidget<UCharacterAttributesWidget>(CharacterAttributesCenterWidgetName);
 }
+
+void UPlayerHUDWidget::SetInteractableKeyText(FName KeyName)
+{
+	if (IsValid(InteractableWidget))
+	{
+		InteractableWidget->SetKeyName(KeyName);
+	}
+}
+
+void UPlayerHUDWidget::ShowInteractableKey(bool bIsVisible)
+{
+	if (!IsValid(InteractableWidget))
+	{
+		return;
+	}
+
+	if (bIsVisible)
+	{
+		InteractableWidget->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		InteractableWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+

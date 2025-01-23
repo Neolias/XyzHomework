@@ -17,6 +17,7 @@ public:
 	ADoor();
 	virtual void Tick(float DeltaTime) override;
 	void Interact(APawn* InteractingPawn) override;
+	FName GetActionName() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -33,6 +34,8 @@ protected:
 	UCurveFloat* DoorAnimCurve;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Interactable"))
 	FVector2D MinMaxAnimAngles = FVector2D(0.f, 120.f);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Interactable"))
+	FName ActionName = FName("InteractWithObject");
 
 private:
 	bool bIsOpen = false;

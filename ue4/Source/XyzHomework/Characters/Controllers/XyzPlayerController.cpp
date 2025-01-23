@@ -5,6 +5,7 @@
 #include "Characters/XyzBaseCharacter.h"
 #include "Components/CharacterComponents/CharacterAttributesComponent.h"
 #include "Components/CharacterComponents/CharacterEquipmentComponent.h"
+#include "GameFramework/PlayerInput.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Widgets/PlayerHUD/PlayerHUDWidget.h"
 #include "UI/Widgets/PlayerHUD/ReticleWidget.h"
@@ -18,6 +19,7 @@ void AXyzPlayerController::SetPawn(APawn* InPawn)
 	CachedBaseCharacter = StaticCast<AXyzBaseCharacter*>(InPawn);
 	if (CachedBaseCharacter.IsValid() && CachedBaseCharacter->IsLocallyControlled())
 	{
+		CachedBaseCharacter->OnInteractableFound.AddUObject(this, &AXyzPlayerController::OnInteractableObjectFound);
 		CreateAndInitializeHUDWidgets();
 	}
 }
@@ -428,6 +430,23 @@ void AXyzPlayerController::InteractWithObject()
 	{
 		CachedBaseCharacter->InteractWithObject();
 	}
+}
+
+void AXyzPlayerController::OnInteractableObjectFound(FName ActionName)
+{
+	if (!IsValid(PlayerHUDWidget))
+	{
+		return;
+	}
+
+	TArray<FInputActionKeyMapping> ActionKeys = PlayerInput->GetKeysForAction(ActionName);
+	const bool HasAnyKeys = ActionKeys.Num() != 0;
+	if (HasAnyKeys)
+	{
+		FName ActionKey = ActionKeys[0].Key.GetFName();
+		PlayerHUDWidget->SetInteractableKeyText(ActionKey);
+	}
+	PlayerHUDWidget->ShowInteractableKey(HasAnyKeys);
 }
 
 void AXyzPlayerController::TurnAtRate(const float Value)

@@ -9,6 +9,7 @@
 #include "XyzBaseCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingStateChanged, bool)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnInteractableFound, FName)
 
 class UCharacterEquipmentComponent;
 class UGCBaseCharacterMovementComponent;
@@ -30,9 +31,12 @@ class XYZHOMEWORK_API AXyzBaseCharacter : public ACharacter, public IGenericTeam
 
 public:
 	FOnAimingStateChanged OnAimingStateChanged;
+	FOnInteractableFound OnInteractableFound;
+
 	bool bIsSprintRequested = false;
 	explicit AXyzBaseCharacter(const OUT FObjectInitializer& ObjectInitializer);
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
 
 	class UXyzBaseCharMovementComponent* GetBaseCharacterMovementComponent() const { return BaseCharacterMovementComponent; }
