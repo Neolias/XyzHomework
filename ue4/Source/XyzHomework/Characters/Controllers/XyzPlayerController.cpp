@@ -68,6 +68,7 @@ void AXyzPlayerController::SetupInputComponent()
 	InputComponent->BindAction("UseSecondaryMeleeAttack", EInputEvent::IE_Pressed, this, &AXyzPlayerController::UseSecondaryMeleeAttack);
 	FInputActionBinding& ToggleMenuBinding = InputComponent->BindAction("ToggleMainMenu", EInputEvent::IE_Pressed, this, &AXyzPlayerController::ToggleMainMenu);
 	ToggleMenuBinding.bExecuteWhenPaused = true;
+	InputComponent->BindAction("InteractWithObject", EInputEvent::IE_Pressed, this, &AXyzPlayerController::InteractWithObject);
 
 	InputComponent->BindAxis("TurnAtRate", this, &AXyzPlayerController::TurnAtRate);
 	InputComponent->BindAxis("LookUpAtRate", this, &AXyzPlayerController::LookUpAtRate);
@@ -418,6 +419,14 @@ void AXyzPlayerController::UseSecondaryMeleeAttack()
 	if (CachedBaseCharacter.IsValid())
 	{
 		CachedBaseCharacter->UseSecondaryMeleeAttack();
+	}
+}
+
+void AXyzPlayerController::InteractWithObject()
+{
+	if (CachedBaseCharacter.IsValid())
+	{
+		CachedBaseCharacter->InteractWithObject();
 	}
 }
 

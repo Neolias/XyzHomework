@@ -4,6 +4,7 @@
 #include "Characters/XyzBaseCharacter.h"
 
 #include "AIController.h"
+#include "DrawDebugHelpers.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Curves/CurveVector.h"
@@ -13,6 +14,7 @@
 #include "Actors/Equipment/Throwables/ThrowableItem.h"
 #include "Actors/Equipment/Weapons/MeleeWeaponItem.h"
 #include "Actors/Equipment/Weapons/RangedWeaponItem.h"
+#include "Actors/Interactive/Interactable.h"
 #include "Controllers/XyzPlayerController.h"
 #include "Components/MovementComponents/XyzBaseCharMovementComponent.h"
 #include "Components/CharacterComponents/CharacterAttributesComponent.h"
@@ -68,6 +70,8 @@ void AXyzBaseCharacter::BeginPlay()
 void AXyzBaseCharacter::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	LineTraceInteractableObject();
 
 	TryToggleWeaponFire();
 	if (IsLocallyControlled())
@@ -985,11 +989,6 @@ void AXyzBaseCharacter::Multicast_Mantle_Implementation(const bool bForceMantle)
 
 // Interactive Actors
 
-bool AXyzBaseCharacter::CanInteractWithActors() const
-{
-	return !BaseCharacterMovementComponent->IsSliding() && !BaseCharacterMovementComponent->IsProne();
-}
-
 void AXyzBaseCharacter::RegisterInteractiveActor(AInteractiveActor* InteractiveActor)
 {
 	InteractiveActors.AddUnique(InteractiveActor);
@@ -1046,6 +1045,40 @@ void AXyzBaseCharacter::InteractWithZipline()
 			BaseCharacterMovementComponent->AttachCharacterToZipline(Zipline);
 		}
 	}
+}
+
+void AXyzBaseCharacter::InteractWithObject()
+{
+	if (CurrentInteractableObject.GetInterface())
+	{
+		CurrentInteractableObject->Interact(this);
+	}
+}
+
+void AXyzBaseCharacter::LineTraceInteractableObject()
+{
+	if (!IsPlayerControlled() || !XyzPlayerController.IsValid())
+	{
+		return;
+	}
+
+	FVector ViewPointLocation;
+	FRotator ViewPointRotation;
+	XyzPlayerController->GetPlayerViewPoint(ViewPointLocation, ViewPointRotation);
+
+	FHitResult HitResult;
+	const FVector EndLocation = ViewPointLocation + ViewPointRotation.Vector() * InteractableObjectRange;
+	GetWorld()->LineTraceSingleByChannel(HitResult, ViewPointLocation, EndLocation, ECC_Visibility);
+
+	if (CurrentInteractableObject != HitResult.GetActor())
+	{
+		CurrentInteractableObject = HitResult.GetActor();
+	}
+}
+
+bool AXyzBaseCharacter::CanInteractWithActors() const
+{
+	return !BaseCharacterMovementComponent->IsSliding() && !BaseCharacterMovementComponent->IsProne();
 }
 
 ALadder* AXyzBaseCharacter::GetAvailableLadder()

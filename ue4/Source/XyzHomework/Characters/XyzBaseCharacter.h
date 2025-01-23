@@ -14,10 +14,11 @@ class UCharacterEquipmentComponent;
 class UGCBaseCharacterMovementComponent;
 class UCharacterAttributesComponent;
 class AInteractiveActor;
-typedef TArray<AInteractiveActor*, TInlineAllocator<10>> TInteractiveActorsArray;
+class IInteractable;
 class AZipline;
 class ALadder;
 class AEquipmentItem;
+typedef TArray<AInteractiveActor*, TInlineAllocator<10>> TInteractiveActorsArray;
 
 /**
  *
@@ -47,14 +48,14 @@ public:
 
 	virtual FRotator GetAimOffset();
 
-	// Overrides
+	// General
 
 	virtual void PossessedBy(AController* NewController) override;
+
+	// Movement
+
 	virtual void Jump() override;
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
-
-	// General Movement
-
 	virtual void MoveForward(float Value) {};
 	virtual void MoveRight(float Value) {};
 	virtual void Turn(float Value) {};
@@ -147,7 +148,8 @@ public:
 	virtual void InteractWithLadder();
 	virtual void RegisterInteractiveActor(AInteractiveActor* InteractiveActor);
 	virtual void UnRegisterInteractiveActor(AInteractiveActor* InteractiveActor);
-	virtual void ClimbLadderUp(float Value) {};
+	virtual void ClimbLadderUp(float Value) {}
+	virtual void InteractWithObject();
 
 	// Wall Running
 
@@ -200,6 +202,8 @@ protected:
 	float IKTraceDistance = 50.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | IK Settings", meta = (ClampMin = 0.f, UIMin = 0.f))
 	float IKInterpSpeed = 15.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Interactable Objects", meta = (ClampMin = 1.f, UIMin = 1.f))
+	float InteractableObjectRange = 500.f;
 
 	TWeakObjectPtr<class AXyzPlayerController> XyzPlayerController;
 	UPROPERTY()
@@ -209,6 +213,7 @@ protected:
 	TWeakObjectPtr<class ARangedWeaponItem> CurrentRangedWeapon;
 	TInteractiveActorsArray InteractiveActors;
 	FTimerHandle HardLandTimer;
+	TScriptInterface<IInteractable> CurrentInteractableObject;
 	bool bIsHardLanding = false;
 	bool bIsFirstPerson = false;
 	bool bWantsToAim = false;
@@ -226,12 +231,9 @@ protected:
 	float IKPelvisOffset = 0.f;
 	float IKScale = 0.f;
 
-	// Overrides
-
-	virtual void RecalculateBaseEyeHeight() override;
-
 	// General
 
+	virtual void RecalculateBaseEyeHeight() override;
 	virtual bool IsAnimMontagePlaying();
 
 	// Aiming
@@ -313,10 +315,11 @@ protected:
 
 	// Interactive Actors
 
+	virtual void LineTraceInteractableObject();
 	virtual bool CanInteractWithActors() const;
 	virtual ALadder* GetAvailableLadder();
 	virtual AZipline* GetAvailableZipline();
-	virtual void OnAttachedToLadderFromTop(ALadder* Ladder) {};
+	virtual void OnAttachedToLadderFromTop(ALadder* Ladder) {}
 
 	// Wall Running
 

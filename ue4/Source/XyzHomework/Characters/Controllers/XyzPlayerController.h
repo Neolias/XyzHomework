@@ -73,6 +73,7 @@ private:
 	void ActivateNextWeaponMode();
 	void UsePrimaryMeleeAttack();
 	void UseSecondaryMeleeAttack();
+	void InteractWithObject();
 
 	void TurnAtRate(float Value);
 	void LookUpAtRate(float Value);
