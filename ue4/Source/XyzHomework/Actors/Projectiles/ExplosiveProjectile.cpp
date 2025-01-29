@@ -13,7 +13,7 @@ AExplosiveProjectile::AExplosiveProjectile()
 
 void AExplosiveProjectile::Explode()
 {
-	ExplosionComponent->Explode(GetController());
+	ExplosionComponent->Explode();
 	if (OnProjectileExplosionEvent.IsBound())
 	{
 		OnProjectileExplosionEvent.Broadcast(this, ResetLocation);
@@ -32,18 +32,7 @@ void AExplosiveProjectile::OnProjectileLaunched()
 
 void AExplosiveProjectile::OnDetonationTimerElapsed()
 {
-	Multicast_OnDetonation();
-}
-
-void AExplosiveProjectile::Multicast_OnDetonation_Implementation()
-{
 	Explode();
-}
-
-AController* AExplosiveProjectile::GetController() const
-{
-	const APawn* PawnOwner = Cast<APawn>(GetOwner());
-	return IsValid(PawnOwner) ? PawnOwner->GetController() : nullptr;
 }
 
 void AExplosiveProjectile::OnCollisionComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,

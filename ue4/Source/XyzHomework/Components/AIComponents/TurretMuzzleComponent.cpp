@@ -109,6 +109,11 @@ void UTurretMuzzleComponent::ProcessHit(FVector MovementDirection, const FHitRes
 		}
 	}
 
+	if (!IsValid(DamageTypeClass))
+	{
+		return;
+	}
+
 	APawn* PawnOwner = GetOwningPawn();
 	if (!IsValid(PawnOwner) || PawnOwner->GetLocalRole() != ROLE_Authority)
 	{

@@ -32,7 +32,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
 	UCurveFloat* WeaponDamageFallOff;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage")
-	TSubclassOf<class UDamageType> DamageTypeClass = UBulletDamageType::StaticClass();
+	TSubclassOf<UDamageType> DamageTypeClass = UBulletDamageType::StaticClass();
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VFX")
 	UNiagaraSystem* MuzzleFlashFX;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VFX")

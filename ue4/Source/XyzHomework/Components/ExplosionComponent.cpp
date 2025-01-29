@@ -25,11 +25,38 @@ APawn* UExplosionComponent::GetOwningPawn() const
 
 void UExplosionComponent::OnDamageTaken(AActor* DamagedActor, float Damage, const UDamageType* DamageType_In, AController* InstigatedBy, AActor* DamageCauser)
 {
-	Explode(InstigatedBy);
+	Explode();
+	if (GetOwner()->GetLocalRole() == ROLE_Authority)
+	{
+		Multicast_OnExplosion();
+	}
+	if (GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		Server_OnExplosion();
+	}
 }
 
-void UExplosionComponent::Explode(AController* Controller) const
+void UExplosionComponent::Server_OnExplosion_Implementation()
 {
+	Explode();
+	Multicast_OnExplosion();
+}
+
+void UExplosionComponent::Multicast_OnExplosion_Implementation()
+{
+	if (GetOwner()->GetLocalRole() == ROLE_SimulatedProxy)
+	{
+		Explode();
+	}
+}
+
+void UExplosionComponent::Explode() const
+{
+	if (!IsValid(DamageType))
+	{
+		return;
+	}
+
 	AActor* Owner = GetOwner();
 	if (IsValid(Owner))
 	{
@@ -37,8 +64,16 @@ void UExplosionComponent::Explode(AController* Controller) const
 		Owner->SetActorHiddenInGame(true);
 	}
 
-	const APawn* OwningPawn = GetOwningPawn();
-	if (IsValid(OwningPawn) && OwningPawn->GetLocalRole() == ROLE_Authority)
+	AActor* OwnerActor = Owner;
+	APawn* OwningPawn = GetOwningPawn();
+	AController* Controller = nullptr;
+	if (IsValid(OwningPawn))
+	{
+		OwnerActor = OwningPawn;
+		Controller = OwningPawn->GetController();
+	}
+	
+	if (IsValid(OwnerActor) && OwnerActor->GetLocalRole() == ROLE_Authority)
 	{
 		TArray<AActor*> IgnoreActors;
 		IgnoreActors.Add(Owner);
@@ -47,7 +82,7 @@ void UExplosionComponent::Explode(AController* Controller) const
 		UGameplayStatics::ApplyRadialDamageWithFalloff(
 			GetWorld(), BaseDamage, MinimumDamage, DamageLocation,
 			InnerRadius, OuterRadius, DamageFalloff, DamageType, IgnoreActors,
-			Owner, Controller, ECC_Visibility);
+			OwnerActor, Controller, ECC_Visibility);
 	}
 
 	if (IsValid(ExplosionVFX))

@@ -17,7 +17,7 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Explosion Component")
 	FOnExplostionEvent OnExplosionEvent;
 	virtual void BeginPlay() override;
-	void Explode(AController* Controller) const;
+	void Explode() const;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1.f, UIMin = 1.f), Category = "Explosion | Damage")
@@ -31,11 +31,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1.f, UIMin = 1.f), Category = "Explosion | Damage")
 	float DamageFalloff = 1.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Explosion | Damage")
-	TSubclassOf<UDamageType> DamageType = UDamageType::StaticClass();
+	TSubclassOf<UDamageType> DamageType;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Explosion | FX")
 	UParticleSystem* ExplosionVFX;
 
 	APawn* GetOwningPawn() const;
 	UFUNCTION()
 	void OnDamageTaken(AActor* DamagedActor, float Damage, const class UDamageType* DamageType_In, class AController* InstigatedBy, AActor* DamageCauser);
+	UFUNCTION(Server, Reliable)
+	void Server_OnExplosion();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnExplosion();
 };

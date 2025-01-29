@@ -25,20 +25,13 @@ void AAICharacterController::SetPawn(APawn* InPawn)
 		checkf(InPawn->IsA<AAICharacter>(), TEXT("AAICharacterController::SetPawn TurretAIController can posses only AAICharacter objects"));
 		CachedAICharacter = StaticCast<AAICharacter*>(InPawn);
 		RunBehaviorTree(CachedAICharacter->GetBehaviorTree());
-
 		CachedAICharacter->OnTakeAnyDamage.AddDynamic(this, &AAICharacterController::OnPawnDamageTaken);
+		TryMoveToNextWayPoint();
 	}
 	else
 	{
 		CachedAICharacter = nullptr;
 	}
-}
-
-void AAICharacterController::BeginPlay()
-{
-	Super::BeginPlay();
-
-	TryMoveToNextWayPoint();
 }
 
 void AAICharacterController::ResetCurrentTarget()

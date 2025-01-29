@@ -14,6 +14,11 @@ AXyzAIController::AXyzAIController()
 
 AActor* AXyzAIController::GetClosestSensedActor(const TSubclassOf<UAISense> SenseClass, const FAISenseAffiliationFilter& AffiliationFilter) const
 {
+	if (!IsValid(SenseClass))
+	{
+		return nullptr;
+	}
+
 	APawn* CurrentPawn = GetPawn();
 
 	if (!IsValid(CurrentPawn) || !IsValid(PerceptionComponent))

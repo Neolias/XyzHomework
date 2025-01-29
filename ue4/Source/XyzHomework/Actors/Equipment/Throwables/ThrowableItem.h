@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "XyzGenericStructs.h"
 #include "Actors/Equipment/EquipmentItem.h"
 #include "Actors/Projectiles/XyzProjectile.h"
 #include "ThrowableItem.generated.h"
@@ -12,9 +11,8 @@
 DECLARE_MULTICAST_DELEGATE(FOnThrowEndEvent)
 DECLARE_MULTICAST_DELEGATE(FOnThrowAnimationFinishedEvent)
 
-/**
- *
- */
+class AXyzProjectile;
+
 UCLASS()
 class XYZHOMEWORK_API AThrowableItem : public AEquipmentItem
 {
@@ -38,7 +36,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable Parameters")
 	EWeaponAmmoType AmmoType = EWeaponAmmoType::Grenade;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable Parameters")
-	TSubclassOf<AXyzProjectile> ProjectileClass = AXyzProjectile::StaticClass();
+	TSubclassOf<AXyzProjectile> ProjectileClass;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable Parameters")
 	FName ThrowableSocketName = "ThrowableSocket";
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Throwable Parameters", meta = (ClampMin = -90.f, UIMin = -90.f, ClampMax = 90.f, UIMax = 90.f))

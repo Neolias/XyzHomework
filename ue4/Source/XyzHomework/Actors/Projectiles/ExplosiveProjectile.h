@@ -31,8 +31,5 @@ protected:
 	void Explode();
 	virtual void OnProjectileLaunched() override;
 	void OnDetonationTimerElapsed();
-	AController* GetController() const;
 	virtual void OnCollisionComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDetonation();
 };

@@ -99,7 +99,7 @@ struct FWeaponModeParameters
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ammo")
 	EHitRegistrationType HitRegistrationType = EHitRegistrationType::HitScan;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ammo", meta = (EditCondition = "HitRegistrationType == EHitRegistrationType::Projectile"))
-	TSubclassOf<AXyzProjectile> ProjectileClass = AXyzProjectile::StaticClass();
+	TSubclassOf<AXyzProjectile> ProjectileClass;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ammo", meta = (ClampMin = 1, UIMin = 1))
 	int32 MagazineSize = 10;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ammo")
@@ -121,7 +121,7 @@ struct FWeaponModeParameters
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
 	UCurveFloat* WeaponDamageFallOff;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage")
-	TSubclassOf<class UDamageType> DamageTypeClass = UBulletDamageType::StaticClass();
+	TSubclassOf<UDamageType> DamageTypeClass = UBulletDamageType::StaticClass();
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VFX")
 	UNiagaraSystem* MuzzleFlashFX;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VFX")
@@ -152,7 +152,7 @@ struct FMeleeAttackDescription
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 0.f, UIMin = 0.f))
 	float DamageAmount = 50.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<class UDamageType> DamageTypeClass = UDamageType::StaticClass();
+	TSubclassOf<UDamageType> DamageTypeClass = UDamageType::StaticClass();
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UAnimMontage* AnimMontage;
 };
@@ -163,7 +163,7 @@ struct FProjectilePool
 	GENERATED_BODY();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<AXyzProjectile> ProjectileClass = AXyzProjectile::StaticClass();
+	TSubclassOf<AXyzProjectile> ProjectileClass;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (ClampMin = 1, UIMin = 1))
 	int32 PoolSize = 10;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -171,6 +171,11 @@ struct FProjectilePool
 
 	void InstantiatePool(UWorld* World, AActor* PoolOwner_In)
 	{
+		if (!IsValid(ProjectileClass))
+		{
+			return;
+		}
+
 		PoolOwner = PoolOwner_In;
 		Projectiles.Reserve(PoolSize);
 		for (int i = 0; i < PoolSize; ++i)

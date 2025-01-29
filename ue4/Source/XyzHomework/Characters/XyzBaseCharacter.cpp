@@ -498,17 +498,29 @@ void AXyzBaseCharacter::OnTogglePrimaryItem(const bool bCanEquip) const
 void AXyzBaseCharacter::TogglePrimaryItem()
 {
 	const bool bCanEquip = CanEquipPrimaryItem();
-	Server_OnTogglePrimaryItem(bCanEquip);
+	OnTogglePrimaryItem(bCanEquip);
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		Multicast_OnTogglePrimaryItem(bCanEquip);
+	}
+	if (GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		Server_OnTogglePrimaryItem(bCanEquip);
+	}
 }
 
 void AXyzBaseCharacter::Server_OnTogglePrimaryItem_Implementation(const bool bCanEquip)
 {
+	OnTogglePrimaryItem(bCanEquip);
 	Multicast_OnTogglePrimaryItem(bCanEquip);
 }
 
 void AXyzBaseCharacter::Multicast_OnTogglePrimaryItem_Implementation(const bool bCanEquip)
 {
-	OnTogglePrimaryItem(bCanEquip);
+	if (GetLocalRole() == ROLE_SimulatedProxy)
+	{
+		OnTogglePrimaryItem(bCanEquip);
+	}
 }
 
 bool AXyzBaseCharacter::CanThrowItem()
