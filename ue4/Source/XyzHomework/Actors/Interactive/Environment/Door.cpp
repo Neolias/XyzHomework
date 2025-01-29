@@ -45,11 +45,14 @@ void ADoor::Interact(APawn* InteractingPawn)
 	if (bIsOpen)
 	{
 		DoorAnimTimeline.Reverse();
-
 	}
 	else
 	{
 		DoorAnimTimeline.Play();
+		if (OnInteraction.IsBound())
+		{
+			OnInteraction.Broadcast();
+		}
 	}
 	bIsOpen = !bIsOpen;
 }
@@ -57,6 +60,21 @@ void ADoor::Interact(APawn* InteractingPawn)
 FName ADoor::GetActionName()
 {
 	return ActionName;
+}
+
+bool ADoor::HasOnInteractionCallback()
+{
+	return true;
+}
+
+FDelegateHandle ADoor::AddOnInteractionDelegate(UObject* Object, const FName& FunctionName)
+{
+	return OnInteraction.AddUFunction(Object, FunctionName);
+}
+
+void ADoor::RemoveOnInteractionDelegate(FDelegateHandle DelegateHandle)
+{
+	OnInteraction.Remove(DelegateHandle);
 }
 
 void ADoor::UpdateDoorAnimTimeline(float Alpha) const

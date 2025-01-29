@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "CharacterAttributesComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeathDelegate, bool, bShouldPlayAnimMontage);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeathDelegate, bool);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOutOfStaminaEventSignature, bool, IsOutOfStamina);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnStaminaChanged, float)
@@ -30,6 +30,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	float GetMaxStamina() const { return MaxStamina; }
 	float GetCurrentStamina() const { return CurrentStamina; }
+	float GetHealthPercentage() const { return CurrentHealth / MaxHealth; }
 	void SetCurrentStamina(const float NewStamina) { CurrentStamina = NewStamina; }
 	UFUNCTION(BlueprintCallable, Category = "Character Attributes Component")
 	bool IsAlive() const;

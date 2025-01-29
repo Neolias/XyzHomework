@@ -3,25 +3,80 @@
 
 #include "Actors/Spawners/AICharacterSpawner.h"
 
-// Sets default values
-AAICharacterSpawner::AAICharacterSpawner()
-{
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+#include "Actors/Interactive/Interactable.h"
+#include "AI/Characters/AICharacter.h"
 
-}
-
-// Called when the game starts or when spawned
 void AAICharacterSpawner::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	UpdateSpawnTrigger();
+
+	if (bSpawnAtBeginPlay)
+	{
+		SpawnAI();
+		UnsubscribeFromTrigger();
+	}
 }
 
-// Called every frame
-void AAICharacterSpawner::Tick(float DeltaTime)
+void AAICharacterSpawner::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
-	Super::Tick(DeltaTime);
+	Super::PostEditChangeProperty(PropertyChangedEvent);
 
+	UpdateSpawnTrigger();
+}
+
+void AAICharacterSpawner::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UnsubscribeFromTrigger();
+}
+
+void AAICharacterSpawner::SpawnAI()
+{
+	if (!bCanSpawn || !IsValid(AICharacterClass))
+	{
+		return;
+	}
+
+	AAICharacter* AICharacter = GetWorld()->SpawnActor<AAICharacter>(AICharacterClass, GetTransform());
+	if (!IsValid(AICharacter->GetController()))
+	{
+		AICharacter->SpawnDefaultController();
+	}
+
+	if (bSpawnOnce)
+	{
+		bCanSpawn = false;
+	}
+}
+
+void AAICharacterSpawner::UpdateSpawnTrigger()
+{
+	if (SpawnTrigger == SpawnTriggerActor)
+	{
+		return;
+	}
+
+	SpawnTrigger = SpawnTriggerActor;
+	if (!SpawnTrigger.GetInterface())
+	{
+		SpawnTriggerActor = nullptr;
+		SpawnTrigger = nullptr;
+	}
+
+	if (SpawnTrigger->HasOnInteractionCallback())
+	{
+		OnSpawnDelegate = SpawnTrigger->AddOnInteractionDelegate(this, FName("SpawnAI"));
+	}
+}
+
+void AAICharacterSpawner::UnsubscribeFromTrigger()
+{
+	if (OnSpawnDelegate.IsValid() && SpawnTrigger.GetInterface())
+	{
+		SpawnTrigger->RemoveOnInteractionDelegate(OnSpawnDelegate);
+	}
 }
 

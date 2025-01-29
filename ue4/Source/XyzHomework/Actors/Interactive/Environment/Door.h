@@ -16,8 +16,11 @@ class XYZHOMEWORK_API ADoor : public AActor, public IInteractable
 public:
 	ADoor();
 	virtual void Tick(float DeltaTime) override;
-	void Interact(APawn* InteractingPawn) override;
-	FName GetActionName() override;
+	virtual void Interact(APawn* InteractingPawn) override;
+	virtual FName GetActionName() override;
+	virtual bool HasOnInteractionCallback() override;
+	virtual FDelegateHandle AddOnInteractionDelegate(UObject* Object, const FName& FunctionName) override;
+	virtual void RemoveOnInteractionDelegate(FDelegateHandle DelegateHandle) override;
 
 protected:
 	virtual void BeginPlay() override;

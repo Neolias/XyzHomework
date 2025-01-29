@@ -22,6 +22,8 @@
 #include "Actors/Interactive/InteractiveActor.h"
 #include "Actors/Interactive/Environment/Ladder.h"
 #include "Actors/Interactive/Environment/Zipline.h"
+#include "Components/WidgetComponent.h"
+#include "UI/Widgets/World/CharacterProgressBarWidget.h"
 
 AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer.SetDefaultSubobjectClass<UXyzBaseCharMovementComponent>(ACharacter::CharacterMovementComponentName))
@@ -31,6 +33,8 @@ AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer
 
 	CharacterAttributesComponent = CreateDefaultSubobject<UCharacterAttributesComponent>(TEXT("CharacterAttributes"));
 	CharacterEquipmentComponent = CreateDefaultSubobject<UCharacterEquipmentComponent>(TEXT("CharacterEquipment"));
+	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
+	WidgetComponent->SetupAttachment(GetCapsuleComponent());
 
 	BaseCharacterMovementComponent->CrouchedHalfHeight = 60.f;
 	BaseCharacterMovementComponent->bCanWalkOffLedgesWhenCrouching = 1;
@@ -64,7 +68,9 @@ void AXyzBaseCharacter::BeginPlay()
 	OnReachedJumpApex.AddDynamic(this, &AXyzBaseCharacter::UpdateJumpApexHeight);
 	LandedDelegate.AddDynamic(this, &AXyzBaseCharacter::OnCharacterLanded);
 	CharacterAttributesComponent->OutOfStaminaEventSignature.AddDynamic(this, &AXyzBaseCharacter::OnOutOfStaminaEvent);
-	CharacterAttributesComponent->OnDeathDelegate.AddDynamic(this, &AXyzBaseCharacter::OnDeath);
+	CharacterAttributesComponent->OnDeathDelegate.AddUFunction(this, FName("OnDeath"));
+
+	SetupProgressBarWidget();
 }
 
 void AXyzBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -173,6 +179,25 @@ bool AXyzBaseCharacter::IsAnimMontagePlaying()
 		return IsValid(AnimInstance) && AnimInstance->IsAnyMontagePlaying();
 	}
 	return false;
+}
+
+void AXyzBaseCharacter::SetupProgressBarWidget()
+{
+	const UCharacterProgressBarWidget* ProgressBarWidget = Cast<UCharacterProgressBarWidget>(WidgetComponent->GetUserWidgetObject());
+	if (!IsValid(ProgressBarWidget))
+	{
+		WidgetComponent->SetVisibility(false);
+		return;
+	}
+
+	if (IsPlayerControlled() && IsLocallyControlled())
+	{
+		WidgetComponent->SetVisibility(false);
+	}
+
+	CharacterAttributesComponent->OnHealthChanged.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
+	CharacterAttributesComponent->OnDeathDelegate.AddLambda([=](bool bShouldPlayAnimation) { WidgetComponent->SetVisibility(false); });
+	ProgressBarWidget->SetHealthProgressBar(CharacterAttributesComponent->GetHealthPercentage());
 }
 
 void AXyzBaseCharacter::OnCharacterCapsuleHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

@@ -6,21 +6,35 @@
 #include "GameFramework/Actor.h"
 #include "AICharacterSpawner.generated.h"
 
+
 UCLASS()
 class XYZHOMEWORK_API AAICharacterSpawner : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	AAICharacterSpawner();
+
+public:
+	UFUNCTION()
+	void SpawnAI();
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "AISpawner"))
+	bool bSpawnAtBeginPlay = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "AISpawner"))
+	bool bSpawnOnce = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "AISpawner"))
+	TSubclassOf<class AAICharacter> AICharacterClass;
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, meta = (Category = "AISpawner", ToolTip = "IInteractable object"))
+	AActor* SpawnTriggerActor;
 
+private:
+	void UpdateSpawnTrigger();
+	void UnsubscribeFromTrigger();
+
+	TScriptInterface<class IInteractable> SpawnTrigger;
+	bool bCanSpawn = true;
+	FDelegateHandle OnSpawnDelegate;
 };

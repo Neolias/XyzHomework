@@ -173,7 +173,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
 	UCharacterAttributesComponent* CharacterAttributesComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
-	class UCharacterEquipmentComponent* CharacterEquipmentComponent;
+	UCharacterEquipmentComponent* CharacterEquipmentComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
+	class UWidgetComponent* WidgetComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Team")
 	ETeam Team = ETeam::Enemy;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | General", meta = (ClampMin = 0.f, UIMin = 0.f))
@@ -239,6 +241,7 @@ protected:
 
 	virtual void RecalculateBaseEyeHeight() override;
 	virtual bool IsAnimMontagePlaying();
+	virtual void SetupProgressBarWidget();
 
 	// Aiming
 
