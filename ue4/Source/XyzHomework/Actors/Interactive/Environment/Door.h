@@ -40,6 +40,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Interactable"))
 	FName ActionName = FName("InteractWithObject");
 
+	IInteractable::FOnInteraction OnInteraction;
+
 private:
 	bool bIsOpen = false;
 	UPROPERTY()

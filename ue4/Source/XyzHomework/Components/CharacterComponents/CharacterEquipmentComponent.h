@@ -59,6 +59,7 @@ public:
 	bool CanReloadCurrentWeapon();
 	void TryReloadNextBullet();
 	bool IsCurrentWeaponMagazineFull() const;
+	void AddEquipmentItemByClass(TSubclassOf<AEquipmentItem> EquipmentItemClass);
 	void EquipPrimaryItem(const bool bForceEquip = false);
 	UFUNCTION()
 	void UnequipPrimaryItem(const bool bForceUnequip = false);

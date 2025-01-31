@@ -34,7 +34,7 @@ void UCharacterEquipmentComponent::BeginPlay()
 	Super::BeginPlay();
 	checkf(GetOwner()->IsA<AXyzBaseCharacter>(), TEXT("UCharacterEquipmentComponent::CreateLoadout() should be used only with AXyzBaseCharacter"))
 		BaseCharacter = StaticCast<AXyzBaseCharacter*>(GetOwner());
-	
+
 	if (BaseCharacter->GetRemoteRole() != ROLE_Authority)
 	{
 		InstantiateProjectilePools(BaseCharacter);
@@ -327,6 +327,19 @@ bool UCharacterEquipmentComponent::DecrementCurrentSlotIndex()
 		}
 	}
 	return true;
+}
+
+void UCharacterEquipmentComponent::AddEquipmentItemByClass(TSubclassOf<AEquipmentItem> EquipmentItemClass)
+{
+	ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(EquipmentItemClass->GetDefaultObject());
+	if (IsValid(RangedWeapon))
+	{
+		EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += RangedWeapon->GetMagazineSize();
+		if (IsValid(GetCurrentRangedWeapon()))
+		{
+			OnCurrentWeaponAmmoChanged(GetCurrentRangedWeapon()->GetCurrentAmmo());
+		}
+	}
 }
 
 AEquipmentItem* UCharacterEquipmentComponent::GetNextItem()
