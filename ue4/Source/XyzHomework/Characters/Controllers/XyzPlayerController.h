@@ -74,6 +74,8 @@ private:
 	void UsePrimaryMeleeAttack();
 	void UseSecondaryMeleeAttack();
 	void InteractWithObject();
+	void UseInventory();
+
 	UFUNCTION()
 	void OnInteractableObjectFound(FName ActionName);
 

@@ -22,7 +22,7 @@ public class XyzHomework : ModuleRules
         DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
 
 
-        PrivateDependencyModuleNames.AddRange(new string[] {  });
+        PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
 		PrivateIncludePaths.AddRange(new string[] { Name });
 

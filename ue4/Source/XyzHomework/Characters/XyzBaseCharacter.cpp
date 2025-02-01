@@ -23,6 +23,7 @@
 #include "Actors/Interactive/Environment/Ladder.h"
 #include "Actors/Interactive/Environment/Zipline.h"
 #include "Components/WidgetComponent.h"
+#include "Components/CharacterComponents/CharacterInventoryComponent.h"
 #include "UI/Widgets/World/CharacterProgressBarWidget.h"
 
 AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer)
@@ -33,6 +34,7 @@ AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer
 
 	CharacterAttributesComponent = CreateDefaultSubobject<UCharacterAttributesComponent>(TEXT("CharacterAttributes"));
 	CharacterEquipmentComponent = CreateDefaultSubobject<UCharacterEquipmentComponent>(TEXT("CharacterEquipment"));
+	CharacterInventoryComponent = CreateDefaultSubobject<UCharacterInventoryComponent>(TEXT("CharacterInventory"));
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetCapsuleComponent());
 
@@ -1098,6 +1100,26 @@ void AXyzBaseCharacter::InteractWithObject()
 	if (CurrentInteractableObject.GetInterface())
 	{
 		CurrentInteractableObject->Interact(this);
+	}
+}
+
+void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
+{
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+	if (!CharacterInventoryComponent->IsViewVisible())
+	{
+		CharacterInventoryComponent->OpenViewInventory(PlayerController);
+		PlayerController->SetInputMode(FInputModeGameAndUI{});
+		PlayerController->bShowMouseCursor = true;
+	}
+	else
+	{
+		CharacterInventoryComponent->CloseViewInventory();
+		PlayerController->SetInputMode(FInputModeGameOnly{});
+		PlayerController->bShowMouseCursor = false;
 	}
 }
 

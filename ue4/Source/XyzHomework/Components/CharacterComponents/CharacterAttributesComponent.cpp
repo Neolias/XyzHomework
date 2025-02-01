@@ -71,11 +71,9 @@ void UCharacterAttributesComponent::OnDamageTaken(AActor* DamagedActor, const fl
 {
 	if (IsAlive())
 	{
-		CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
-		if (OnHealthChanged.IsBound())
-		{
-			OnHealthChanged.Broadcast(CurrentHealth / MaxHealth);
-		}
+		const float NewHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
+		SetCurrentHealth(NewHealth);
+
 		TryTriggerDeath(DamageType);
 	}
 }
@@ -143,6 +141,30 @@ void UCharacterAttributesComponent::DrawDebugAttributes() const
 }
 #endif
 
+void UCharacterAttributesComponent::AddHealth(float Amount)
+{
+	const float NewHealth = FMath::Clamp(CurrentHealth + Amount, 0.f, MaxHealth);
+	SetCurrentHealth(NewHealth);
+}
+
+void UCharacterAttributesComponent::SetCurrentHealth(const float NewHealth)
+{
+	CurrentHealth = NewHealth;
+	if (OnHealthChanged.IsBound())
+	{
+		OnHealthChanged.Broadcast(CurrentHealth / MaxHealth);
+	}
+}
+
+void UCharacterAttributesComponent::SetCurrentStamina(const float NewStamina)
+{
+	CurrentStamina = NewStamina;
+	if (OnStaminaChanged.IsBound())
+	{
+		OnStaminaChanged.Broadcast(CurrentStamina / MaxStamina);
+	}
+}
+
 bool UCharacterAttributesComponent::IsAlive() const
 {
 	if (!bIsDeathTriggered && CurrentHealth > 0.f)
@@ -173,12 +195,8 @@ void UCharacterAttributesComponent::TakeFallDamage(const float FallHeight) const
 void UCharacterAttributesComponent::UpdateStaminaValue(const float DeltaTime)
 {
 	const float Delta = BaseCharacterMovementComponent->IsSprinting() ? -SprintStaminaConsumptionVelocity : StaminaRestoreVelocity;
-	CurrentStamina += Delta * DeltaTime;
-	CurrentStamina = FMath::Clamp(CurrentStamina, 0.f, MaxStamina);
-	if (OnStaminaChanged.IsBound())
-	{
-		OnStaminaChanged.Broadcast(CurrentStamina / MaxStamina);
-	}
+	const float NewStamina = FMath::Clamp(CurrentStamina += Delta * DeltaTime, 0.f, MaxStamina);
+	SetCurrentStamina(NewStamina);
 }
 
 void UCharacterAttributesComponent::TryChangeOutOfStaminaState()

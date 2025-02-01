@@ -31,7 +31,9 @@ public:
 	float GetMaxStamina() const { return MaxStamina; }
 	float GetCurrentStamina() const { return CurrentStamina; }
 	float GetHealthPercentage() const { return CurrentHealth / MaxHealth; }
-	void SetCurrentStamina(const float NewStamina) { CurrentStamina = NewStamina; }
+	void AddHealth(float Amount);
+	void SetCurrentHealth(const float NewHealth);
+	void SetCurrentStamina(const float NewStamina);
 	UFUNCTION(BlueprintCallable, Category = "Character Attributes Component")
 	bool IsAlive() const;
 	bool IsOutOfStamina() const { return bIsOutOfStamina; }

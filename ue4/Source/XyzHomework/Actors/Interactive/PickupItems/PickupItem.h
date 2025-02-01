@@ -3,19 +3,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "XyzGenericEnums.h"
 #include "Actors/Interactive/Interactable.h"
 #include "GameFramework/Actor.h"
 #include "PickupItem.generated.h"
 
-UCLASS(Abstract, NotBlueprintable)
+UCLASS()
 class XYZHOMEWORK_API APickupItem : public AActor, public IInteractable
 {
 	GENERATED_BODY()
 
 public:
-	const FName& GetDataTableID() const;
+	APickupItem();
+	virtual FName GetActionName() override;
+	EInventoryItemType GetItemType() const { return ItemType; }
+	virtual void Interact(APawn* InteractingPawn) override;
 
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Interactable | "))
+	FName ActionName = FName("InteractWithObject");
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (Category = "Interactable | Pickup"))
-	FName DataTableID = NAME_None;
+	EInventoryItemType ItemType = EInventoryItemType::None;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Interactable | Pickup"))
+	UStaticMeshComponent* ItemMesh;
+
 };

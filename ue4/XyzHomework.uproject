@@ -13,7 +13,8 @@
 				"UMG",
 				"AIModule",
 				"GameplayTasks",
-				"NavigationSystem"
+				"NavigationSystem",
+				"CoreUObject"
 			]
 		}
 	],

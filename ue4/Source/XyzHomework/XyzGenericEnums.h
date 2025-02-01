@@ -155,3 +155,12 @@ enum class EPatrolMode : uint8
 	PingPong,
 	Max UMETA(Hidden)
 };
+
+UENUM(BlueprintType)
+enum class EInventoryItemType : uint8
+{
+	None = 0,
+	HealthPack UMETA(DisplayName = "HealthPack"),
+	Adrenaline,
+	Max UMETA(Hidden)
+};

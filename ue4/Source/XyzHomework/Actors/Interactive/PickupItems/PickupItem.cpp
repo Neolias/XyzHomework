@@ -1,9 +1,30 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Actors/Interactive/PickupItems/PickupItem.h"
+#include "PickupItem.h"
 
-const FName& APickupItem::GetDataTableID() const
+#include "Characters/XyzBaseCharacter.h"
+#include "Components/CharacterComponents/CharacterInventoryComponent.h"
+
+APickupItem::APickupItem()
 {
-	return DataTableID;
+	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
+	SetRootComponent(ItemMesh);
+
+	PrimaryActorTick.bCanEverTick = false;
+}
+
+FName APickupItem::GetActionName()
+{
+	return ActionName;
+}
+
+void APickupItem::Interact(APawn* InteractingPawn)
+{
+	AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(InteractingPawn);
+	if (IsValid(BaseCharacter))
+	{
+		BaseCharacter->GetCharacterInventoryComponent()->AddInventoryItem(ItemType, 1);
+	}
+	Destroy();
 }

@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "XyzBaseCharacter.generated.h"
 
+class UCharacterInventoryComponent;
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingStateChanged, bool)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInteractableFound, FName)
 
@@ -42,6 +43,7 @@ public:
 	class UXyzBaseCharMovementComponent* GetBaseCharacterMovementComponent() const { return BaseCharacterMovementComponent; }
 	UCharacterAttributesComponent* GetCharacterAttributesComponent() const { return CharacterAttributesComponent; }
 	UCharacterEquipmentComponent* GetCharacterEquipmentComponent() const { return CharacterEquipmentComponent; }
+	UCharacterInventoryComponent* GetCharacterInventoryComponent() const { return CharacterInventoryComponent; }
 	virtual bool IsFirstPerson() const { return bIsFirstPerson; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetIKLeftFootOffset() const { return IKLeftFootOffset; }
@@ -49,7 +51,6 @@ public:
 	float GetIKRightFootOffset() const { return IKRightFootOffset; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetIKPelvisOffset() const { return IKPelvisOffset; }
-
 	virtual FRotator GetAimOffset();
 
 	// General
@@ -155,6 +156,10 @@ public:
 	virtual void ClimbLadderUp(float Value) {}
 	virtual void InteractWithObject();
 
+	// Inventory
+
+	void UseInventory(APlayerController* PlayerController);
+
 	// Wall Running
 
 	virtual void OnWallRunStart() {};
@@ -174,6 +179,8 @@ protected:
 	UCharacterAttributesComponent* CharacterAttributesComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
 	UCharacterEquipmentComponent* CharacterEquipmentComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
+	UCharacterInventoryComponent* CharacterInventoryComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
 	class UWidgetComponent* WidgetComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Team")

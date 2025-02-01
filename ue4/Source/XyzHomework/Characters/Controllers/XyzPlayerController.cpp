@@ -71,6 +71,7 @@ void AXyzPlayerController::SetupInputComponent()
 	FInputActionBinding& ToggleMenuBinding = InputComponent->BindAction("ToggleMainMenu", EInputEvent::IE_Pressed, this, &AXyzPlayerController::ToggleMainMenu);
 	ToggleMenuBinding.bExecuteWhenPaused = true;
 	InputComponent->BindAction("InteractWithObject", EInputEvent::IE_Pressed, this, &AXyzPlayerController::InteractWithObject);
+	InputComponent->BindAction("UseInventory", EInputEvent::IE_Pressed, this, &AXyzPlayerController::UseInventory);
 
 	InputComponent->BindAxis("TurnAtRate", this, &AXyzPlayerController::TurnAtRate);
 	InputComponent->BindAxis("LookUpAtRate", this, &AXyzPlayerController::LookUpAtRate);
@@ -429,6 +430,14 @@ void AXyzPlayerController::InteractWithObject()
 	if (CachedBaseCharacter.IsValid())
 	{
 		CachedBaseCharacter->InteractWithObject();
+	}
+}
+
+void AXyzPlayerController::UseInventory()
+{
+	if (CachedBaseCharacter.IsValid())
+	{
+		CachedBaseCharacter->UseInventory(this);
 	}
 }
 
