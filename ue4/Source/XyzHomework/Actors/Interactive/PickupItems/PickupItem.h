@@ -20,11 +20,13 @@ public:
 	virtual void Interact(APawn* InteractingPawn) override;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Interactable | "))
-	FName ActionName = FName("InteractWithObject");
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (Category = "Interactable | Pickup"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interactable")
 	EInventoryItemType ItemType = EInventoryItemType::None;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Interactable | Pickup"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interactable", meta = (ClampMin = 1, UIMin = 1))
+	int32 Amount = 1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interactable")
 	UStaticMeshComponent* ItemMesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interactable")
+	FName ActionName = FName("InteractWithObject");
 
 };

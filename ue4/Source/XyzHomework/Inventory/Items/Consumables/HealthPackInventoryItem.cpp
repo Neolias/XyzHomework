@@ -7,7 +7,7 @@
 #include "Components/CharacterComponents/CharacterAttributesComponent.h"
 #include "Components/CharacterComponents/CharacterInventoryComponent.h"
 
-void UHealthPackInventoryItem::Consume(APawn* Pawn)
+bool UHealthPackInventoryItem::Consume(APawn* Pawn)
 {
 	Super::Consume(Pawn);
 
@@ -16,5 +16,8 @@ void UHealthPackInventoryItem::Consume(APawn* Pawn)
 	{
 		BaseCharacter->GetCharacterAttributesComponent()->AddHealth(HealthRestoreAmount);
 		BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, 1);
+		return true;
 	}
+
+	return false;
 }

@@ -7,7 +7,7 @@
 #include "Components/CharacterComponents/CharacterAttributesComponent.h"
 #include "Components/CharacterComponents/CharacterInventoryComponent.h"
 
-void UAdrenalineInventoryItem::Consume(APawn* Pawn)
+bool UAdrenalineInventoryItem::Consume(APawn* Pawn)
 {
 	Super::Consume(Pawn);
 
@@ -17,5 +17,8 @@ void UAdrenalineInventoryItem::Consume(APawn* Pawn)
 		UCharacterAttributesComponent* AttributesComponent = BaseCharacter->GetCharacterAttributesComponent();
 		AttributesComponent->SetCurrentStamina(AttributesComponent->GetMaxStamina());
 		BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, 1);
+		return true;
 	}
+
+	return false;
 }

@@ -4,7 +4,6 @@
 #include "PickupItem.h"
 
 #include "Characters/XyzBaseCharacter.h"
-#include "Components/CharacterComponents/CharacterInventoryComponent.h"
 
 APickupItem::APickupItem()
 {
@@ -24,7 +23,7 @@ void APickupItem::Interact(APawn* InteractingPawn)
 	AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(InteractingPawn);
 	if (IsValid(BaseCharacter))
 	{
-		BaseCharacter->GetCharacterInventoryComponent()->AddInventoryItem(ItemType, 1);
+		BaseCharacter->PickupItem(ItemType, Amount);
 	}
 	Destroy();
 }

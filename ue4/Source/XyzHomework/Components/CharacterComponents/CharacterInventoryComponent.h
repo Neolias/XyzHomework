@@ -47,11 +47,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Inventory", ClampMin = 0, UIMin = 0))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory", meta = (ClampMin = 0, UIMin = 0))
 	int32 Capacity = 16;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Inventory"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	class UDataTable* ItemDataTable;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Category = "Inventory"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	TSubclassOf<UInventoryViewWidget> InventoryViewWidgetClass;
 
 private:

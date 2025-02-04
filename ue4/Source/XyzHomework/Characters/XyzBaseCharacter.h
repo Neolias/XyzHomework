@@ -159,6 +159,7 @@ public:
 	// Inventory
 
 	void UseInventory(APlayerController* PlayerController);
+	void PickupItem(EInventoryItemType ItemType, int32 Amount);
 
 	// Wall Running
 

@@ -162,5 +162,11 @@ enum class EInventoryItemType : uint8
 	None = 0,
 	HealthPack UMETA(DisplayName = "HealthPack"),
 	Adrenaline,
+	Pistol,
+	Rifle,
+	Shotgun,
+	SniperRifle UMETA(DisplayName = "SniperRifle"),
+	Knife,
+	Grenade,
 	Max UMETA(Hidden)
 };

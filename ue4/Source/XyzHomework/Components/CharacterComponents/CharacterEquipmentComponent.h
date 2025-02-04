@@ -50,6 +50,7 @@ public:
 	void EquipFromDefaultItemSlot(const bool bShouldSkipAnimation = true);
 	void DrawNextItem();
 	void DrawPreviousItem();
+	bool AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, EEquipmentItemSlot EquipmentItemSlot = EEquipmentItemSlot::None);
 	UFUNCTION(BlueprintCallable, Category = "Character Equipment Component")
 	bool EquipItemBySlotType(EEquipmentItemSlot EquipmentItemSlot, bool bShouldSkipAnimation = true);
 	void UnequipCurrentItem();
@@ -59,7 +60,6 @@ public:
 	bool CanReloadCurrentWeapon();
 	void TryReloadNextBullet();
 	bool IsCurrentWeaponMagazineFull() const;
-	void AddEquipmentItemByClass(TSubclassOf<AEquipmentItem> EquipmentItemClass);
 	void EquipPrimaryItem(const bool bForceEquip = false);
 	UFUNCTION()
 	void UnequipPrimaryItem(const bool bForceUnequip = false);
@@ -67,15 +67,15 @@ public:
 	void ThrowItem();
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Loadout")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Equipment | Loadout")
 	EEquipmentItemSlot DefaultEquipmentItemSlot = EEquipmentItemSlot::PrimaryWeapon;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Loadout")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Equipment | Loadout")
 	TMap<EWeaponAmmoType, int32> MaxEquippedWeaponAmmo;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Loadout")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Equipment | Loadout")
 	TMap<EEquipmentItemSlot, TSubclassOf<AEquipmentItem>> EquipmentSlots;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Loadout")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Equipment | Loadout")
 	TArray<EEquipmentItemSlot> WeaponSwitchIgnoredSlots;
-	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = "Loadout")
+	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment | Loadout")
 	TArray<FProjectilePool> ProjectilePools;
 
 	UPROPERTY()

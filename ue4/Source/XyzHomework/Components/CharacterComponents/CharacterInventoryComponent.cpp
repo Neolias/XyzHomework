@@ -82,7 +82,7 @@ bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType,
 	if (IsValid(ItemDataTable))
 	{
 		FString RowID = UEnum::GetDisplayValueAsText<EInventoryItemType>(ItemType).ToString();
-		const FItemTableRow* ItemData = ItemDataTable->FindRow<FItemTableRow>(FName(RowID), TEXT("Find item data"));
+		const FInventoryTableRow* ItemData = ItemDataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
 
 		if (ItemData)
 		{
@@ -90,7 +90,7 @@ bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType,
 			if (FreeSlot)
 			{
 				const TWeakObjectPtr<UInventoryItem> NewItem = NewObject<UInventoryItem>(GetOwner(), ItemData->InventoryItemClass);
-				NewItem->Initialize(ItemType, ItemData->InventoryItemDescription);
+				NewItem->Initialize(ItemType, ItemData->InventoryItemDescription, ItemData->EquipmentItemClass);
 				NewItem->SetCount(NewItem->GetCount() + Amount);
 				FreeSlot->Item = NewItem;
 				FreeSlot->UpdateSlotState();

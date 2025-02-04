@@ -13,7 +13,7 @@ class XYZHOMEWORK_API UHealthPackInventoryItem : public UInventoryItem
 	GENERATED_BODY()
 
 public:
-	virtual void Consume(APawn* Pawn) override;
+	virtual bool Consume(APawn* Pawn) override;
 
 private:
 	float HealthRestoreAmount = 25.f;

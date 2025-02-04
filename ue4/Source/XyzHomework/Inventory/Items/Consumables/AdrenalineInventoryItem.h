@@ -13,5 +13,5 @@ class XYZHOMEWORK_API UAdrenalineInventoryItem : public UInventoryItem
 	GENERATED_BODY()
 
 public:
-	virtual void Consume(APawn* Pawn) override;
+	virtual bool Consume(APawn* Pawn) override;
 };

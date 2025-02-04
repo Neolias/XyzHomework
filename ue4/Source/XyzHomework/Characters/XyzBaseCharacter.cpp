@@ -1123,6 +1123,11 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 	}
 }
 
+void AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
+{
+	CharacterInventoryComponent->AddInventoryItem(ItemType, 1);;
+}
+
 void AXyzBaseCharacter::LineTraceInteractableObject()
 {
 	if (!IsPlayerControlled() || !XyzPlayerController.IsValid())

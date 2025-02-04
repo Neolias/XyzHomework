@@ -3,10 +3,30 @@
 
 #include "InventoryItem.h"
 
-void UInventoryItem::Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In)
+#include "Actors/Equipment/EquipmentItem.h"
+#include "Characters/XyzBaseCharacter.h"
+#include "Components/CharacterComponents/CharacterEquipmentComponent.h"
+
+void UInventoryItem::Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In)
 {
 	ItemType = ItemType_In;
+	EquipmentItemClass = EquipmentItemClass_In;
 	Description.Icon = Description_In.Icon;
 	Description.Name = Description_In.Name;
 	bIsInitialized = true;
+}
+
+bool UInventoryItem::AddToEquipment(AXyzBaseCharacter* BaseCharacter, EEquipmentItemSlot EquipmentItemSlot)
+{
+	if (!IsValid(EquipmentItemClass))
+	{
+		return false;
+	}
+
+	if (IsValid(BaseCharacter))
+	{
+		return BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(EquipmentItemClass, EquipmentItemSlot);
+	}
+
+	return false;
 }

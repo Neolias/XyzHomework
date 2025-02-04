@@ -329,19 +329,6 @@ bool UCharacterEquipmentComponent::DecrementCurrentSlotIndex()
 	return true;
 }
 
-void UCharacterEquipmentComponent::AddEquipmentItemByClass(TSubclassOf<AEquipmentItem> EquipmentItemClass)
-{
-	ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(EquipmentItemClass->GetDefaultObject());
-	if (IsValid(RangedWeapon))
-	{
-		EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += RangedWeapon->GetMagazineSize();
-		if (IsValid(GetCurrentRangedWeapon()))
-		{
-			OnCurrentWeaponAmmoChanged(GetCurrentRangedWeapon()->GetCurrentAmmo());
-		}
-	}
-}
-
 AEquipmentItem* UCharacterEquipmentComponent::GetNextItem()
 {
 	if (!IncrementCurrentSlotIndex())
@@ -620,6 +607,21 @@ void UCharacterEquipmentComponent::Multicast_OnThrowItem_Implementation(AXyzProj
 	{
 		CurrentThrowableItem->Throw(ThrowableProjectile, ResetLocation);
 	}
+}
+
+bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, EEquipmentItemSlot EquipmentItemSlot/* = EEquipmentItemSlot::None*/)
+{
+	ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(EquipmentItemClass->GetDefaultObject());
+	if (IsValid(RangedWeapon))
+	{
+		EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += RangedWeapon->GetMagazineSize();
+		if (IsValid(GetCurrentRangedWeapon()))
+		{
+			OnCurrentWeaponAmmoChanged(GetCurrentRangedWeapon()->GetCurrentAmmo());
+		}
+		return true;
+	}
+	return false;
 }
 
 bool UCharacterEquipmentComponent::EquipItemBySlotType(EEquipmentItemSlot EquipmentItemSlot, const bool bShouldSkipAnimation/* = true*/)
