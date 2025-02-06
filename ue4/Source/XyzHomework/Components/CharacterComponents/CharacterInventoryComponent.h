@@ -7,6 +7,7 @@
 #include "Components/ActorComponent.h"
 #include "CharacterInventoryComponent.generated.h"
 
+class UDataTable;
 class UInventoryItem;
 class UInventoryViewWidget;
 
@@ -38,10 +39,11 @@ class XYZHOMEWORK_API UCharacterInventoryComponent : public UActorComponent
 public:
 	UCharacterInventoryComponent();
 
-	void OpenViewInventory(APlayerController* PlayerController);
+	void CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
+	void OpenViewInventory(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
 	void CloseViewInventory();
-	bool IsViewVisible() const;
-	bool AddInventoryItem(EInventoryItemType ItemType, int32 Amount);
+	bool IsViewInventoryVisible() const;
+	bool AddInventoryItem(EInventoryItemType ItemType, int32 Amount, UDataTable* InventoryItemDataTable);
 	void RemoveInventoryItem(EInventoryItemType ItemType, int32 Amount);
 
 protected:
@@ -50,8 +52,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory", meta = (ClampMin = 0, UIMin = 0))
 	int32 Capacity = 16;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
-	class UDataTable* ItemDataTable;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	TSubclassOf<UInventoryViewWidget> InventoryViewWidgetClass;
 
 private:
@@ -59,7 +59,6 @@ private:
 	TArray<FInventorySlot> ItemSlots;
 	UPROPERTY()
 	UInventoryViewWidget* InventoryViewWidget;
-
-	void CreateViewWidget(APlayerController* PlayerController);
-
+	UPROPERTY()
+	UDataTable* CachedItemDataTable;
 };

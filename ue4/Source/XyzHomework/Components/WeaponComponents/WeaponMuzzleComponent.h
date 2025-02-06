@@ -4,12 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "XyzGenericStructs.h"
-#include "Actors/Projectiles/ExplosiveProjectile.h"
-#include "Actors/Projectiles/XyzProjectile.h"
+#include "Actors/Projectiles/ProjectilePool.h"
 #include "Components/SceneComponent.h"
 #include "WeaponMuzzleComponent.generated.h"
 
+class AExplosiveProjectile;
 class UNiagaraSystem;
+class AXyzProjectile;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class XYZHOMEWORK_API UWeaponMuzzleComponent : public USceneComponent

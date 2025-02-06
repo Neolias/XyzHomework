@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "XyzBaseCharacter.generated.h"
 
+class UDataTable;
 class UCharacterInventoryComponent;
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingStateChanged, bool)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInteractableFound, FName)
@@ -158,6 +159,7 @@ public:
 
 	// Inventory
 
+	UDataTable* GetInventoryItemDataTable() const { return InventoryItemDataTable; }
 	void UseInventory(APlayerController* PlayerController);
 	void PickupItem(EInventoryItemType ItemType, int32 Amount);
 
@@ -218,6 +220,8 @@ protected:
 	float IKInterpSpeed = 15.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Interactable Objects", meta = (ClampMin = 1.f, UIMin = 1.f))
 	float InteractableObjectRange = 500.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "XYZ Character | Inventory")
+	UDataTable* InventoryItemDataTable;
 
 	TWeakObjectPtr<class AXyzPlayerController> XyzPlayerController;
 	UPROPERTY()

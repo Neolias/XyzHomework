@@ -9,7 +9,7 @@
 #include "Inventory/Items/InventoryItem.h"
 
 
-void UInventorySlotWidget::InitializeItemSlot(FInventorySlot& InventorySlot)
+void UInventorySlotWidget::InitializeSlot(FInventorySlot& InventorySlot)
 {
 	LinkedSlot = &InventorySlot;
 

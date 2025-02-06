@@ -16,7 +16,7 @@ class XYZHOMEWORK_API UInventoryViewWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
-	void InitializeViewWidget(TArray<FInventorySlot>& InventorySlots);
+	void InitializeWidget(TArray<FInventorySlot>& InventorySlots);
 
 protected:
 	UPROPERTY(meta = (BindWidget))
@@ -28,5 +28,5 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ItemSlots")
 	int32 ColumnCount = 4;
 
-	void AddItemSlotView(FInventorySlot& SlotToAdd);
+	void AddSlotToView(FInventorySlot& SlotToAdd);
 };

@@ -12,7 +12,7 @@ UCLASS()
 class XYZHOMEWORK_API AXyzProjectile : public AActor
 {
 	GENERATED_BODY()
-	
+
 public:
 	FOnCollisionComponentHit OnCollisionComponentHitEvent;
 

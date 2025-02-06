@@ -6,15 +6,15 @@
 #include "InventorySlotWidget.h"
 #include "Components/GridPanel.h"
 
-void UInventoryViewWidget::InitializeViewWidget(TArray<FInventorySlot>& InventorySlots)
+void UInventoryViewWidget::InitializeWidget(TArray<FInventorySlot>& InventorySlots)
 {
 	for (FInventorySlot& Item : InventorySlots)
 	{
-		AddItemSlotView(Item);
+		AddSlotToView(Item);
 	}
 }
 
-void UInventoryViewWidget::AddItemSlotView(FInventorySlot& SlotToAdd)
+void UInventoryViewWidget::AddSlotToView(FInventorySlot& SlotToAdd)
 {
 	checkf(InventorySlotWidgetClass.Get() != nullptr, TEXT("UItemContainerWidget::AddItemSlotView widget class doesn't not exist"));
 
@@ -22,7 +22,7 @@ void UInventoryViewWidget::AddItemSlotView(FInventorySlot& SlotToAdd)
 
 	if (SlotWidget != nullptr)
 	{
-		SlotWidget->InitializeItemSlot(SlotToAdd);
+		SlotWidget->InitializeSlot(SlotToAdd);
 
 		const int32 CurrentSlotCount = GridPanelItemSlots->GetChildrenCount();
 		const int32 CurrentSlotRow = CurrentSlotCount / ColumnCount;

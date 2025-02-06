@@ -25,8 +25,16 @@ bool UInventoryItem::AddToEquipment(AXyzBaseCharacter* BaseCharacter, EEquipment
 
 	if (IsValid(BaseCharacter))
 	{
-		return BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(EquipmentItemClass, EquipmentItemSlot);
+		return BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(EquipmentItemClass, (uint32)EquipmentItemSlot);
 	}
 
 	return false;
+}
+
+void UInventoryItem::RemoveFromEquipment(class AXyzBaseCharacter* BaseCharacter, EEquipmentItemSlot EquipmentItemSlot)
+{
+	if (IsValid(BaseCharacter))
+	{
+		return BaseCharacter->GetCharacterEquipmentComponent()->RemoveEquipmentItem((uint32)EquipmentItemSlot);
+	}
 }

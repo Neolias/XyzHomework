@@ -1109,15 +1109,18 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 	{
 		return;
 	}
-	if (!CharacterInventoryComponent->IsViewVisible())
+
+	if (!CharacterInventoryComponent->IsViewInventoryVisible() || !CharacterEquipmentComponent->IsViewEquipmentVisible())
 	{
-		CharacterInventoryComponent->OpenViewInventory(PlayerController);
+		CharacterInventoryComponent->OpenViewInventory(PlayerController, InventoryItemDataTable);
+		CharacterEquipmentComponent->OpenViewEquipment(PlayerController, InventoryItemDataTable);
 		PlayerController->SetInputMode(FInputModeGameAndUI{});
 		PlayerController->bShowMouseCursor = true;
 	}
 	else
 	{
 		CharacterInventoryComponent->CloseViewInventory();
+		CharacterEquipmentComponent->CloseViewEquipment();
 		PlayerController->SetInputMode(FInputModeGameOnly{});
 		PlayerController->bShowMouseCursor = false;
 	}
@@ -1125,7 +1128,7 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 
 void AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
 {
-	CharacterInventoryComponent->AddInventoryItem(ItemType, 1);;
+	CharacterInventoryComponent->AddInventoryItem(ItemType, 1, InventoryItemDataTable);;
 }
 
 void AXyzBaseCharacter::LineTraceInteractableObject()

@@ -3,6 +3,8 @@
 
 #include "Components/WeaponComponents/WeaponMuzzleComponent.h"
 
+#include <Actors/Projectiles/ProjectilePool.h>
+
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"

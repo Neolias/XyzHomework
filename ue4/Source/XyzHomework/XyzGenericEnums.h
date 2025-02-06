@@ -56,7 +56,7 @@ enum class EEquipmentItemType : uint8
 	Pistol,
 	Rifle,
 	Shotgun,
-	SniperRifle,
+	SniperRifle UMETA(DisplayName = "SniperRifle"),
 	Grenade,
 	Knife,
 	Max UMETA(Hidden)

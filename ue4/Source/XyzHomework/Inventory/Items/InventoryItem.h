@@ -56,6 +56,7 @@ public:
 	void SetCount(const int32 NewCount) { Count = NewCount; }
 	virtual bool Consume(APawn* Pawn) { return false; }
 	virtual bool AddToEquipment(class AXyzBaseCharacter* BaseCharacter, EEquipmentItemSlot EquipmentItemSlot);
+	virtual void RemoveFromEquipment(class AXyzBaseCharacter* BaseCharacter, EEquipmentItemSlot EquipmentItemSlot);
 
 protected:
 	EInventoryItemType ItemType = EInventoryItemType::None;

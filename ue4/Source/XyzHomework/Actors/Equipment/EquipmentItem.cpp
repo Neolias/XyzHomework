@@ -4,6 +4,7 @@
 #include "Actors/Equipment/EquipmentItem.h"
 
 #include "Characters/XyzBaseCharacter.h"
+#include "Inventory/Items/InventoryItem.h"
 
 AEquipmentItem::AEquipmentItem()
 {
@@ -27,4 +28,14 @@ void AEquipmentItem::SetOwner(AActor* NewOwner)
 	{
 		CachedBaseCharacterOwner = nullptr;
 	}
+}
+
+void AEquipmentItem::SetLinkedInventoryItem(const TWeakObjectPtr<UInventoryItem> InventoryItem)
+{
+	LinkedInventoryItem = InventoryItem;
+}
+
+bool AEquipmentItem::IsEquipmentSlotCompatible(const EEquipmentItemSlot EquipmentSlot) const
+{
+	return CompatibleEquipmentSlots.Contains(EquipmentSlot);
 }

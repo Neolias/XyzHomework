@@ -7,7 +7,11 @@
 #include "Actors/Equipment/Weapons/MeleeWeaponItem.h"
 #include "Characters/XyzBaseCharacter.h"
 #include "Actors/Equipment/Weapons/RangedWeaponItem.h"
+#include "Blueprint/UserWidget.h"
+#include "Inventory/Items/InventoryItem.h"
 #include "Net/UnrealNetwork.h"
+#include "UI/Widgets/Equipment/EquipmentViewWidget.h"
+#include "Actors/Projectiles/ProjectilePool.h"
 
 UCharacterEquipmentComponent::UCharacterEquipmentComponent()
 {
@@ -74,7 +78,7 @@ EEquipmentItemType UCharacterEquipmentComponent::GetCurrentRangedWeaponType() co
 {
 	if (CurrentRangedWeapon.IsValid())
 	{
-		return CurrentRangedWeapon->GetItemType();
+		return CurrentRangedWeapon->GetEquipmentItemType();
 	}
 	return EEquipmentItemType::None;
 }
@@ -170,8 +174,9 @@ void UCharacterEquipmentComponent::CreateLoadout()
 		return;
 	}
 
-	USkeletalMeshComponent* SkeletalMesh = BaseCharacter->GetMesh();
+	CachedItemDataTable = BaseCharacter->GetInventoryItemDataTable();
 
+	USkeletalMeshComponent* SkeletalMesh = BaseCharacter->GetMesh();
 	if (!IsValid(SkeletalMesh))
 	{
 		return;
@@ -189,45 +194,135 @@ void UCharacterEquipmentComponent::CreateLoadout()
 			continue;
 		}
 
-		FActorSpawnParameters SpawnParameters;
-		SpawnParameters.Owner = BaseCharacter;
-		AEquipmentItem* Item = GetWorld()->SpawnActor<AEquipmentItem>(SlotPair.Value, SpawnParameters);
-		Item->AttachToComponent(SkeletalMesh, FAttachmentTransformRules::KeepRelativeTransform, Item->GetUnequippedSocketName());
+		LoadoutOneItem(SlotPair.Key, SlotPair.Value, SkeletalMesh);
+	}
+}
 
-		ARangedWeaponItem* RangedWeaponItem = Cast<ARangedWeaponItem>(Item);
-		if (IsValid(RangedWeaponItem))
+void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSlot,	TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh)
+{
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = BaseCharacter;
+	AEquipmentItem* Item = GetWorld()->SpawnActor<AEquipmentItem>(EquipmentItemClass, SpawnParameters);
+	Item->AttachToComponent(SkeletalMesh, FAttachmentTransformRules::KeepRelativeTransform, Item->GetUnequippedSocketName());
+	InitializeInventoryItem(Item);
+
+	ARangedWeaponItem* RangedWeaponItem = Cast<ARangedWeaponItem>(Item);
+	if (IsValid(RangedWeaponItem))
+	{
+		const TArray<FWeaponModeParameters>* WeaponModesArray = RangedWeaponItem->GetWeaponModesArray();
+		for (int i = 0; i < WeaponModesArray->Num(); ++i)
 		{
-			const TArray<FWeaponModeParameters>* WeaponModesArray = RangedWeaponItem->GetWeaponModesArray();
-			for (int i = 0; i < WeaponModesArray->Num(); ++i)
-			{
-				RangedWeaponItem->SetCurrentWeaponMode(i);
+			RangedWeaponItem->SetCurrentWeaponMode(i);
 
-				const FWeaponModeParameters* WeaponModeParameters = RangedWeaponItem->GetWeaponModeParameters(i);
-				if (WeaponModeParameters && WeaponModeParameters->ReloadType == EWeaponReloadType::ByBullet)
-				{
-					LoadWeaponMagazineByBullet(RangedWeaponItem);
-				}
-				else
-				{
-					const int32 AmmoToLoad = GetAvailableAmmoForWeaponMagazine(RangedWeaponItem);
-					EquipmentAmmoArray[(uint32)RangedWeaponItem->GetAmmoType()] -= AmmoToLoad;
-					RangedWeaponItem->SetCurrentAmmo(AmmoToLoad);
-				}
+			const FWeaponModeParameters* WeaponModeParameters = RangedWeaponItem->GetWeaponModeParameters(i);
+			if (WeaponModeParameters && WeaponModeParameters->ReloadType == EWeaponReloadType::ByBullet)
+			{
+				LoadWeaponMagazineByBullet(RangedWeaponItem);
 			}
-			RangedWeaponItem->SetCurrentWeaponMode(RangedWeaponItem->GetDefaultWeaponModeIndex());
-		}
-
-		AThrowableItem* ThrowableItem = Cast<AThrowableItem>(Item);
-		if (IsValid(ThrowableItem))
-		{
-			OnCurrentThrowableAmmoChanged(EquipmentAmmoArray[(int32)ThrowableItem->GetAmmoType()]);
-			if (!CanThrowItem(ThrowableItem))
+			else
 			{
-				ThrowableItem->SetActorHiddenInGame(true);
+				const int32 AmmoToLoad = GetAvailableAmmoForWeaponMagazine(RangedWeaponItem);
+				EquipmentAmmoArray[(uint32)RangedWeaponItem->GetAmmoType()] -= AmmoToLoad;
+				RangedWeaponItem->SetCurrentAmmo(AmmoToLoad);
 			}
 		}
+		RangedWeaponItem->SetCurrentWeaponMode(RangedWeaponItem->GetDefaultWeaponModeIndex());
+	}
 
-		EquippedItemsArray[(uint32)SlotPair.Key] = Item;
+	AThrowableItem* ThrowableItem = Cast<AThrowableItem>(Item);
+	if (IsValid(ThrowableItem))
+	{
+		OnCurrentThrowableAmmoChanged(EquipmentAmmoArray[(int32)ThrowableItem->GetAmmoType()]);
+		if (!CanThrowItem(ThrowableItem))
+		{
+			ThrowableItem->SetActorHiddenInGame(true);
+		}
+	}
+
+	EquippedItemsArray[(uint32)EquipmentSlot] = Item;
+}
+
+bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, uint32 EquipmentSlotIndex)
+{
+	if (EquipmentSlotIndex == 0 || !IsValid(BaseCharacter))
+	{
+		return false;
+	}
+
+	CachedItemDataTable = BaseCharacter->GetInventoryItemDataTable();
+
+	const EEquipmentItemSlot EquipmentSlot = (EEquipmentItemSlot)EquipmentSlotIndex;
+	AEquipmentItem* DefaultItem = Cast<AEquipmentItem>(EquipmentItemClass->GetDefaultObject());
+	if (!IsValid(DefaultItem) || !DefaultItem->IsEquipmentSlotCompatible(EquipmentSlot))
+	{
+		return false;
+	}
+
+	// If an item of this type is already equipped
+	if (IsValid(EquippedItemsArray[EquipmentSlotIndex]))
+	{
+		//ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(DefaultItem);
+		//if (IsValid(RangedWeapon))
+		//{
+		//	EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += RangedWeapon->GetMagazineSize();
+		//	// Update the player HUD even if the current weapon type is different
+		//	if (IsValid(GetCurrentRangedWeapon()))
+		//	{
+		//		OnCurrentWeaponAmmoChanged(GetCurrentRangedWeapon()->GetCurrentAmmo());
+		//	}
+		//	return false;
+		//}
+
+		//AThrowableItem* ThrowableItem = Cast<AThrowableItem>(DefaultItem);
+		//if (IsValid(ThrowableItem))
+		//{
+		//	const int32 ThrowableIndex = (int32)ThrowableItem->GetAmmoType();
+		//	EquipmentAmmoArray[ThrowableIndex] += 1;
+		//	OnCurrentThrowableAmmoChanged(EquipmentAmmoArray[ThrowableIndex]);
+		//	return false;
+		//}
+		return false;
+	}
+
+	USkeletalMeshComponent* SkeletalMesh = BaseCharacter->GetMesh();
+	if (!IsValid(SkeletalMesh))
+	{
+		return false;
+	}
+	LoadoutOneItem(EquipmentSlot, EquipmentItemClass, SkeletalMesh);
+	EquipPreviousItemIfUnequipped(false);
+
+	return true;
+}
+
+void UCharacterEquipmentComponent::RemoveEquipmentItem(uint32 EquipmentSlotIndex)
+{
+	if (CurrentSlotIndex == EquipmentSlotIndex)
+	{
+		UnequipCurrentItem();
+	}
+
+	AEquipmentItem* Item = EquippedItemsArray[EquipmentSlotIndex];
+	if (IsValid(Item))
+	{
+		ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(Item);
+		if (IsValid(RangedWeapon))
+		{
+			const int32 CurrentWeaponAmmo = RangedWeapon->GetCurrentAmmo();
+			EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += CurrentWeaponAmmo;
+		}
+		else
+		{
+			AThrowableItem* ThrowableItem = Cast<AThrowableItem>(Item);
+			if (IsValid(ThrowableItem))
+			{
+				// Note that the actual number in the ammo array is not changed
+				OnCurrentThrowableAmmoChanged(0);
+			}
+		}
+
+		Item->Destroy();
+		EquippedItemsArray[EquipmentSlotIndex] = nullptr;
 	}
 }
 
@@ -364,7 +459,7 @@ void UCharacterEquipmentComponent::UnequipCurrentItem()
 	UnequipItem(CurrentEquippedItem.Get());
 }
 
-void UCharacterEquipmentComponent::EquipPreviousItemIfUnequipped()
+void UCharacterEquipmentComponent::EquipPreviousItemIfUnequipped(const bool bShouldSkipAnimation/* = true*/)
 {
 	if (CurrentEquippedItem.IsValid())
 	{
@@ -374,7 +469,7 @@ void UCharacterEquipmentComponent::EquipPreviousItemIfUnequipped()
 	AEquipmentItem* PreviousItem = EquippedItemsArray[CurrentSlotIndex];
 	if (IsValid(PreviousItem))
 	{
-		EquipItem(PreviousItem, true);
+		EquipItem(PreviousItem, bShouldSkipAnimation);
 	}
 }
 
@@ -596,6 +691,73 @@ void UCharacterEquipmentComponent::ThrowItem()
 	}
 }
 
+void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
+{
+	CachedItemDataTable = InventoryItemDataTable;
+
+	if (IsValid(EquipmentViewWidget))
+	{
+		return;
+	}
+
+	if (!IsValid(PlayerController) || !IsValid(EquipmentViewWidgetClass))
+	{
+		return;
+	}
+
+	EquipmentViewWidget = CreateWidget<UEquipmentViewWidget>(PlayerController, EquipmentViewWidgetClass);
+	EquipmentViewWidget->InitializeWidget(this);
+}
+
+void UCharacterEquipmentComponent::InitializeInventoryItem(AEquipmentItem* EquipmentItem)
+{
+	if (IsValid(CachedItemDataTable))
+	{
+		const EInventoryItemType ItemType = EquipmentItem->GetInventoryItemType();
+		FString RowID = UEnum::GetDisplayValueAsText<EInventoryItemType>(ItemType).ToString();
+		const FInventoryTableRow* ItemData = CachedItemDataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
+
+		if (ItemData)
+		{
+			const TWeakObjectPtr<UInventoryItem> NewItem = NewObject<UInventoryItem>(GetOwner(), ItemData->InventoryItemClass);
+			NewItem->Initialize(ItemType, ItemData->InventoryItemDescription, ItemData->EquipmentItemClass);
+			EquipmentItem->SetLinkedInventoryItem(NewItem);
+		}
+	}
+}
+
+void UCharacterEquipmentComponent::OpenViewEquipment(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
+{
+	CachedItemDataTable = InventoryItemDataTable;
+
+	if (!IsValid(EquipmentViewWidget))
+	{
+		CreateViewWidget(PlayerController, InventoryItemDataTable);
+	}
+
+	if (!EquipmentViewWidget->IsVisible())
+	{
+		EquipmentViewWidget->AddToViewport();
+	}
+}
+
+void UCharacterEquipmentComponent::CloseViewEquipment()
+{
+	if (EquipmentViewWidget->IsVisible())
+	{
+		EquipmentViewWidget->RemoveFromParent();
+	}
+}
+
+bool UCharacterEquipmentComponent::IsViewEquipmentVisible() const
+{
+	if (IsValid(EquipmentViewWidget))
+	{
+		return EquipmentViewWidget->IsVisible();
+	}
+	return false;
+}
+
 void UCharacterEquipmentComponent::Server_OnThrowItem_Implementation(AXyzProjectile* ThrowableProjectile, const FVector ResetLocation)
 {
 	Multicast_OnThrowItem(ThrowableProjectile, ResetLocation);
@@ -607,21 +769,6 @@ void UCharacterEquipmentComponent::Multicast_OnThrowItem_Implementation(AXyzProj
 	{
 		CurrentThrowableItem->Throw(ThrowableProjectile, ResetLocation);
 	}
-}
-
-bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, EEquipmentItemSlot EquipmentItemSlot/* = EEquipmentItemSlot::None*/)
-{
-	ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(EquipmentItemClass->GetDefaultObject());
-	if (IsValid(RangedWeapon))
-	{
-		EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += RangedWeapon->GetMagazineSize();
-		if (IsValid(GetCurrentRangedWeapon()))
-		{
-			OnCurrentWeaponAmmoChanged(GetCurrentRangedWeapon()->GetCurrentAmmo());
-		}
-		return true;
-	}
-	return false;
 }
 
 bool UCharacterEquipmentComponent::EquipItemBySlotType(EEquipmentItemSlot EquipmentItemSlot, const bool bShouldSkipAnimation/* = true*/)

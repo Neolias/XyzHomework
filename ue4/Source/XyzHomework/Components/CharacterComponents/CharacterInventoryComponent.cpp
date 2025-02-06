@@ -34,11 +34,31 @@ UCharacterInventoryComponent::UCharacterInventoryComponent()
 
 }
 
-void UCharacterInventoryComponent::OpenViewInventory(APlayerController* PlayerController)
+void UCharacterInventoryComponent::CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
 {
+	CachedItemDataTable = InventoryItemDataTable;
+
+	if (IsValid(InventoryViewWidget))
+	{
+		return;
+	}
+
+	if (!IsValid(PlayerController) || !IsValid(InventoryViewWidgetClass))
+	{
+		return;
+	}
+
+	InventoryViewWidget = CreateWidget<UInventoryViewWidget>(PlayerController, InventoryViewWidgetClass);
+	InventoryViewWidget->InitializeWidget(ItemSlots);
+}
+
+void UCharacterInventoryComponent::OpenViewInventory(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
+{
+	CachedItemDataTable = InventoryItemDataTable;
+
 	if (!IsValid(InventoryViewWidget))
 	{
-		CreateViewWidget(PlayerController);
+		CreateViewWidget(PlayerController, InventoryItemDataTable);
 	}
 
 	if (!InventoryViewWidget->IsVisible())
@@ -55,7 +75,7 @@ void UCharacterInventoryComponent::CloseViewInventory()
 	}
 }
 
-bool UCharacterInventoryComponent::IsViewVisible() const
+bool UCharacterInventoryComponent::IsViewInventoryVisible() const
 {
 	if (IsValid(InventoryViewWidget))
 	{
@@ -64,12 +84,14 @@ bool UCharacterInventoryComponent::IsViewVisible() const
 	return false;
 }
 
-bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType, int32 Amount)
+bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType, int32 Amount, UDataTable* InventoryItemDataTable)
 {
 	if (Amount < 1 || UsedSlotCount >= Capacity)
 	{
 		return false;
 	}
+
+	CachedItemDataTable = InventoryItemDataTable;
 
 	FInventorySlot* ItemSlot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType; });
 	if (ItemSlot)
@@ -79,10 +101,10 @@ bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType,
 		return true;
 	}
 
-	if (IsValid(ItemDataTable))
+	if (IsValid(CachedItemDataTable))
 	{
 		FString RowID = UEnum::GetDisplayValueAsText<EInventoryItemType>(ItemType).ToString();
-		const FInventoryTableRow* ItemData = ItemDataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
+		const FInventoryTableRow* ItemData = CachedItemDataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
 
 		if (ItemData)
 		{
@@ -133,20 +155,4 @@ void UCharacterInventoryComponent::BeginPlay()
 	Super::BeginPlay();
 
 	ItemSlots.AddDefaulted(Capacity);
-}
-
-void UCharacterInventoryComponent::CreateViewWidget(APlayerController* PlayerController)
-{
-	if (IsValid(InventoryViewWidget))
-	{
-		return;
-	}
-
-	if (!IsValid(PlayerController) || !IsValid(InventoryViewWidgetClass))
-	{
-		return;
-	}
-
-	InventoryViewWidget = CreateWidget<UInventoryViewWidget>(PlayerController, InventoryViewWidgetClass);
-	InventoryViewWidget->InitializeViewWidget(ItemSlots);
 }

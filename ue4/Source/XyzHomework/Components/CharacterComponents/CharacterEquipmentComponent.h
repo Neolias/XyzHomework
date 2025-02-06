@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "XyzGenericEnums.h"
+#include "Actors/Projectiles/ProjectilePool.h"
 #include "Components/ActorComponent.h"
 #include "CharacterEquipmentComponent.generated.h"
 
+class UDataTable;
+class UEquipmentViewWidget;
 class AXyzProjectile;
-struct FProjectilePool;
 class AMeleeWeaponItem;
 class AEquipmentItem;
 class ARangedWeaponItem;
@@ -32,6 +34,7 @@ public:
 
 	UCharacterEquipmentComponent();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	const TArray<AEquipmentItem*>& GetEquippedItems() const { return EquippedItemsArray; }
 	AEquipmentItem* GetCurrentEquipmentItem() const { return CurrentEquippedItem.Get(); }
 	ARangedWeaponItem* GetCurrentRangedWeapon() const { return CurrentRangedWeapon.Get(); }
 	EEquipmentItemType GetCurrentRangedWeaponType() const;
@@ -50,11 +53,12 @@ public:
 	void EquipFromDefaultItemSlot(const bool bShouldSkipAnimation = true);
 	void DrawNextItem();
 	void DrawPreviousItem();
-	bool AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, EEquipmentItemSlot EquipmentItemSlot = EEquipmentItemSlot::None);
+	bool AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, uint32 EquipmentSlotIndex);
+	void RemoveEquipmentItem(uint32 EquipmentSlotIndex);
 	UFUNCTION(BlueprintCallable, Category = "Character Equipment Component")
 	bool EquipItemBySlotType(EEquipmentItemSlot EquipmentItemSlot, bool bShouldSkipAnimation = true);
 	void UnequipCurrentItem();
-	void EquipPreviousItemIfUnequipped();
+	void EquipPreviousItemIfUnequipped(bool bShouldSkipAnimation = true);
 	void AttachCurrentEquippedItemToCharacterMesh();
 	void ActivateNextWeaponMode();
 	bool CanReloadCurrentWeapon();
@@ -65,6 +69,12 @@ public:
 	void UnequipPrimaryItem(const bool bForceUnequip = false);
 	bool CanThrowItem(const AThrowableItem* ThrowableItem);
 	void ThrowItem();
+
+	void CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
+	void InitializeInventoryItem(AEquipmentItem* EquipmentItem);
+	void OpenViewEquipment(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
+	void CloseViewEquipment();
+	bool IsViewEquipmentVisible() const;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Equipment | Loadout")
@@ -77,6 +87,8 @@ protected:
 	TArray<EEquipmentItemSlot> WeaponSwitchIgnoredSlots;
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment | Loadout")
 	TArray<FProjectilePool> ProjectilePools;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | UI")
+	TSubclassOf<UEquipmentViewWidget> EquipmentViewWidgetClass;
 
 	UPROPERTY()
 	class AXyzBaseCharacter* BaseCharacter;
@@ -111,6 +123,11 @@ protected:
 	void OnRep_IsPrimaryItemEquipped();
 	bool bIsMeleeAttackActive = false;
 
+	UPROPERTY()
+	UDataTable* CachedItemDataTable;
+	UPROPERTY()
+	UEquipmentViewWidget* EquipmentViewWidget;
+
 	virtual void BeginPlay() override;
 	void InstantiateProjectilePools(AActor* Owner);
 	UFUNCTION()
@@ -125,6 +142,7 @@ protected:
 	void OnThrowItemAnimationFinished();
 	void OnCurrentThrowableAmmoChanged(int32 NewAmmo) const;
 	void CreateLoadout();
+	void LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh);
 	bool IncrementCurrentSlotIndex();
 	bool DecrementCurrentSlotIndex();
 

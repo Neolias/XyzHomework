@@ -15,7 +15,7 @@ class XYZHOMEWORK_API UInventorySlotWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void InitializeItemSlot(FInventorySlot& InventorySlot);
+	void InitializeSlot(FInventorySlot& InventorySlot);
 	void UpdateView();
 	void SetItemIcon(UTexture2D* Icon);
 
