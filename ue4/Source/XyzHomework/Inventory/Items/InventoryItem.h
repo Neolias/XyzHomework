@@ -22,9 +22,10 @@ struct FInventoryItemDescription : public FTableRowBase
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Name;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UTexture2D* Icon;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bCanStackItems = false;
 };
 
 USTRUCT(BlueprintType)
@@ -35,10 +36,8 @@ struct FInventoryTableRow : public FTableRowBase
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<AEquipmentItem> EquipmentItemClass;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<UInventoryItem> InventoryItemClass;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FInventoryItemDescription InventoryItemDescription;
 };
@@ -50,8 +49,8 @@ class XYZHOMEWORK_API UInventoryItem : public UObject
 
 public:
 	void Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In);
-	bool IsInitialized() const { return bIsInitialized; }
 	bool IsEquipment() const { return bIsEquipment; }
+	bool CanStackItems() const { return bCanStackItems; }
 	EInventoryItemType GetItemType() const { return ItemType; }
 	TSubclassOf<AEquipmentItem> GetEquipmentItemClass() const { return EquipmentItemClass; }
 	const FInventoryItemDescription& GetDescription() const { return Description; }
@@ -75,7 +74,7 @@ protected:
 
 private:
 	FInventoryItemDescription Description;
-	bool bIsInitialized = false;
 	bool bIsEquipment = false;
+	bool bCanStackItems = false;
 	int32 Count = 0;
 };

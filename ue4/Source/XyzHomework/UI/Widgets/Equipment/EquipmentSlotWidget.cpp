@@ -13,6 +13,7 @@ void UEquipmentSlotWidget::InitializeSlot(TWeakObjectPtr<UInventoryItem> Invento
 {
 	LinkedInventoryItem = InventoryItem;
 	SlotIndexInComponent = SlotIndex;
+	SlotName->SetText(UEnum::GetDisplayValueAsText<EEquipmentItemSlot>((EEquipmentItemSlot)SlotIndex));
 }
 
 void UEquipmentSlotWidget::UpdateView()
@@ -92,6 +93,11 @@ bool UEquipmentSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDrag
 	const auto NewItem = TWeakObjectPtr<UInventoryItem>(Cast<UInventoryItem>(InOperation->Payload));
 	if (NewItem.IsValid())
 	{
+		if (!NewItem->IsEquipment())
+		{
+			return false;
+		}
+
 		const auto CachedLinkedInventoryItem = LinkedInventoryItem;
 		Result = OnEquipmentDropInSlot.Execute(NewItem->GetEquipmentItemClass(), SlotIndexInComponent);
 		if (Result && CachedLinkedInventoryItem.IsValid())

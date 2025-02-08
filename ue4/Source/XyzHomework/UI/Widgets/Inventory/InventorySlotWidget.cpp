@@ -23,18 +23,18 @@ void UInventorySlotWidget::UpdateView()
 {
 	if (!LinkedSlot)
 	{
-		ImageItemIcon->SetBrushFromTexture(nullptr);
+		ItemIcon->SetBrushFromTexture(nullptr);
 		return;
 	}
 
 	if (LinkedSlot->Item.IsValid())
 	{
 		const FInventoryItemDescription& Description = LinkedSlot->Item->GetDescription();
-		ImageItemIcon->SetBrushFromTexture(Description.Icon);
+		ItemIcon->SetBrushFromTexture(Description.Icon);
 	}
 	else
 	{
-		ImageItemIcon->SetBrushFromTexture(nullptr);
+		ItemIcon->SetBrushFromTexture(nullptr);
 	}
 }
 
@@ -82,7 +82,7 @@ void UInventorySlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, con
 
 	/* Some simplification for not define new widget for drag and drop operation  */
 	UInventorySlotWidget* DragWidget = CreateWidget<UInventorySlotWidget>(GetOwningPlayer(), GetClass());
-	DragWidget->ImageItemIcon->SetBrushFromTexture(LinkedSlot->Item->GetDescription().Icon);
+	DragWidget->ItemIcon->SetBrushFromTexture(LinkedSlot->Item->GetDescription().Icon);
 
 	DragOperation->DefaultDragVisual = DragWidget;
 	DragOperation->Pivot = EDragPivot::MouseDown;
@@ -102,33 +102,54 @@ bool UInventorySlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDrag
 		return true;
 	}
 
+	bool Result = false;
+
 	if (NewItem.IsValid())
 	{
-		if (LinkedSlot->Item->GetItemType() != NewItem->GetItemType())
+		if (LinkedSlot->Item->GetItemType() == NewItem->GetItemType())
 		{
-			UInventorySlotWidget* PreviousInventoryWidget = NewItem->GetPreviousInventorySlotWidget();
-			if (IsValid(PreviousInventoryWidget))
+			if (NewItem->CanStackItems())
 			{
-				PreviousInventoryWidget->SetLinkedSlotItem(LinkedSlot->Item);
-			}
-			else
-			{
-				UEquipmentSlotWidget* PreviousEquipmentWidget = NewItem->GetPreviousEquipmentSlotWidget();
-				if (IsValid(PreviousEquipmentWidget))
+				Result = UpdatePreviousSlot(NewItem, nullptr);
+				if (Result)
 				{
-					if (!PreviousEquipmentWidget->SetLinkedSlotItem(LinkedSlot->Item))
-					{
-						return false;
-					}
+					LinkedSlot->Item->SetCount(LinkedSlot->Item->GetCount() + NewItem->GetCount());
 				}
 			}
-
-			SetLinkedSlotItem(NewItem);
-			return true;
+		}
+		else
+		{
+			Result = UpdatePreviousSlot(NewItem, LinkedSlot->Item);
+			if (Result)
+			{
+				SetLinkedSlotItem(NewItem);
+			}
 		}
 	}
 
-	return false;
+	return Result;
+}
+
+bool UInventorySlotWidget::UpdatePreviousSlot(TWeakObjectPtr<UInventoryItem> InventoryItem, TWeakObjectPtr<UInventoryItem> NewSlotData)
+{
+	UInventorySlotWidget* PreviousInventoryWidget = InventoryItem->GetPreviousInventorySlotWidget();
+	if (IsValid(PreviousInventoryWidget))
+	{
+		PreviousInventoryWidget->SetLinkedSlotItem(NewSlotData);
+	}
+	else
+	{
+		UEquipmentSlotWidget* PreviousEquipmentWidget = InventoryItem->GetPreviousEquipmentSlotWidget();
+		if (IsValid(PreviousEquipmentWidget))
+		{
+			if (!PreviousEquipmentWidget->SetLinkedSlotItem(NewSlotData))
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
 void UInventorySlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
@@ -139,7 +160,7 @@ void UInventorySlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDro
 
 void UInventorySlotWidget::SetItemIcon(UTexture2D* Icon)
 {
-	ImageItemIcon->SetBrushFromTexture(Icon);
+	ItemIcon->SetBrushFromTexture(Icon);
 }
 
 void UInventorySlotWidget::SetLinkedSlotItem(TWeakObjectPtr<UInventoryItem> NewItem)

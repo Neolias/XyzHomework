@@ -31,10 +31,10 @@ public:
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* ItemIcon;
-
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ItemName;
-
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* SlotName;
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UInventorySlotWidget> DragAndDropWidgetClass;
 
@@ -45,6 +45,5 @@ protected:
 
 private:
 	TWeakObjectPtr<UInventoryItem> LinkedInventoryItem;
-
 	int32 SlotIndexInComponent = 0;
 };

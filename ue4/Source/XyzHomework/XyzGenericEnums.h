@@ -57,8 +57,8 @@ enum class EEquipmentItemType : uint8
 	Rifle,
 	Shotgun,
 	SniperRifle UMETA(DisplayName = "SniperRifle"),
-	Grenade,
 	Knife,
+	Grenade,
 	Max UMETA(Hidden)
 };
 
@@ -69,9 +69,9 @@ enum class EEquipmentItemSlot : uint8
 	SideArm,
 	PrimaryWeapon,
 	SecondaryWeapon,
+	MeleeWeapon,
 	PrimaryItem,
 	//SecondaryItem,
-	MeleeWeapon,
 	Max UMETA(Hidden)
 };
 

@@ -93,7 +93,7 @@ bool UCharacterInventoryComponent::IsViewInventoryVisible() const
 
 bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType, int32 Amount, UDataTable* InventoryItemDataTable)
 {
-	if (Amount < 1 || UsedSlotCount >= Capacity)
+	if (Amount < 1)
 	{
 		return false;
 	}
@@ -101,11 +101,16 @@ bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType,
 	CachedItemDataTable = InventoryItemDataTable;
 
 	FInventorySlot* ItemSlot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType; });
-	if (ItemSlot && !ItemSlot->Item->IsEquipment())
+	if (ItemSlot && ItemSlot->Item->CanStackItems())
 	{
 		ItemSlot->Item->SetCount(ItemSlot->Item->GetCount() + Amount);
 		ItemSlot->UpdateSlotState();
 		return true;
+	}
+
+	if (UsedSlotCount >= Capacity)
+	{
+		return false;
 	}
 
 	if (IsValid(CachedItemDataTable))

@@ -24,7 +24,7 @@ public:
 
 protected:
 	UPROPERTY(meta = (BindWidget))
-	UImage* ImageItemIcon;
+	UImage* ItemIcon;
 
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
@@ -33,5 +33,7 @@ protected:
 
 private:
 	FInventorySlot* LinkedSlot;
+
+	bool UpdatePreviousSlot(TWeakObjectPtr<UInventoryItem> InventoryItem, TWeakObjectPtr<UInventoryItem> NewSlotData);
 
 };

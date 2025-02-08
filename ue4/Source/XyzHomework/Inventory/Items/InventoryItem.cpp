@@ -14,11 +14,11 @@
 void UInventoryItem::Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In)
 {
 	ItemType = ItemType_In;
-	EquipmentItemClass = EquipmentItemClass_In;
-	bIsEquipment = IsValid(EquipmentItemClass_In);
 	Description.Icon = Description_In.Icon;
 	Description.Name = Description_In.Name;
-	bIsInitialized = true;
+	bCanStackItems = Description_In.bCanStackItems;
+	EquipmentItemClass = EquipmentItemClass_In;
+	bIsEquipment = IsValid(EquipmentItemClass_In);
 }
 
 void UInventoryItem::SetPreviousInventorySlotWidget(UInventorySlotWidget* SlotWidget)
@@ -35,7 +35,7 @@ void UInventoryItem::SetPreviousEquipmentSlotWidget(UEquipmentSlotWidget* SlotWi
 
 bool UInventoryItem::AddToEquipment(APawn* Pawn)
 {
-	if (!IsValid(EquipmentItemClass))
+	if (!IsEquipment() || !IsValid(EquipmentItemClass))
 	{
 		return false;
 	}
@@ -50,11 +50,11 @@ bool UInventoryItem::AddToEquipment(APawn* Pawn)
 		{
 			if (IsValid(PreviousInventorySlotWidget))
 			{
-				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(PreviousInventorySlotWidget->GetLinkedSlot(), 1);
+				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(PreviousInventorySlotWidget->GetLinkedSlot(), Count);
 			}
 			else
 			{
-				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, 1);
+				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, Count);
 			}
 		}
 	}
