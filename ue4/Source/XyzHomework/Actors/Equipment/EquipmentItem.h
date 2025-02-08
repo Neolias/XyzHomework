@@ -32,6 +32,7 @@ public:
 	float GetAimingFOV() const { return AimingFOV; }
 	TWeakObjectPtr<UInventoryItem> GetLinkedInventoryItem() const { return LinkedInventoryItem; }
 	void SetLinkedInventoryItem(TWeakObjectPtr<UInventoryItem> InventoryItem);
+	const TArray<EEquipmentItemSlot>& GetCompatibleEquipmentSlots() const { return CompatibleEquipmentSlots; }
 	bool IsEquipmentSlotCompatible(EEquipmentItemSlot EquipmentSlot) const;
 
 protected:

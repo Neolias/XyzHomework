@@ -6,35 +6,74 @@
 #include "Actors/Equipment/EquipmentItem.h"
 #include "Characters/XyzBaseCharacter.h"
 #include "Components/CharacterComponents/CharacterEquipmentComponent.h"
+#include "Components/CharacterComponents/CharacterInventoryComponent.h"
+#include "UI/Widgets/Equipment/EquipmentSlotWidget.h"
+#include "UI/Widgets/Equipment/EquipmentViewWidget.h"
+#include "UI/Widgets/Inventory/InventorySlotWidget.h"
 
 void UInventoryItem::Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In)
 {
 	ItemType = ItemType_In;
 	EquipmentItemClass = EquipmentItemClass_In;
+	bIsEquipment = IsValid(EquipmentItemClass_In);
 	Description.Icon = Description_In.Icon;
 	Description.Name = Description_In.Name;
 	bIsInitialized = true;
 }
 
-bool UInventoryItem::AddToEquipment(AXyzBaseCharacter* BaseCharacter, EEquipmentItemSlot EquipmentItemSlot)
+void UInventoryItem::SetPreviousInventorySlotWidget(UInventorySlotWidget* SlotWidget)
+{
+	PreviousInventorySlotWidget = SlotWidget;
+	PreviousEquipmentSlotWidget = nullptr;
+}
+
+void UInventoryItem::SetPreviousEquipmentSlotWidget(UEquipmentSlotWidget* SlotWidget)
+{
+	PreviousEquipmentSlotWidget = SlotWidget;
+	PreviousInventorySlotWidget = nullptr;
+}
+
+bool UInventoryItem::AddToEquipment(APawn* Pawn)
 {
 	if (!IsValid(EquipmentItemClass))
 	{
 		return false;
 	}
 
+	bool Result = false;
+	const AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(Pawn);
 	if (IsValid(BaseCharacter))
 	{
-		return BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(EquipmentItemClass, (uint32)EquipmentItemSlot);
+		Result = BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(EquipmentItemClass);
+
+		if (Result)
+		{
+			if (IsValid(PreviousInventorySlotWidget))
+			{
+				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(PreviousInventorySlotWidget->GetLinkedSlot(), 1);
+			}
+			else
+			{
+				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, 1);
+			}
+		}
 	}
 
-	return false;
+	return Result;
 }
 
-void UInventoryItem::RemoveFromEquipment(class AXyzBaseCharacter* BaseCharacter, EEquipmentItemSlot EquipmentItemSlot)
+bool UInventoryItem::RemoveFromEquipment(APawn* Pawn, int32 EquipmentSlotIndex)
 {
+	bool Result = false;
+	const AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(Pawn);
 	if (IsValid(BaseCharacter))
 	{
-		return BaseCharacter->GetCharacterEquipmentComponent()->RemoveEquipmentItem((uint32)EquipmentItemSlot);
+		Result = BaseCharacter->GetCharacterInventoryComponent()->AddInventoryItem(ItemType, Count, BaseCharacter->GetInventoryItemDataTable());
+		if (Result)
+		{
+			BaseCharacter->GetCharacterEquipmentComponent()->RemoveEquipmentItem(EquipmentSlotIndex);
+		}
 	}
+
+	return Result;
 }

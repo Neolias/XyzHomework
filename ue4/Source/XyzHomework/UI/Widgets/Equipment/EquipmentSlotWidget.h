@@ -24,8 +24,10 @@ public:
 	FOnEquipmentDropInSlot OnEquipmentDropInSlot;
 	FOnEquipmentRemoveFromSlot OnEquipmentRemoveFromSlot;
 
-	void InitializeSlot(TWeakObjectPtr<AEquipmentItem> EquipmentItem, int32 SlotIndex);
+	void InitializeSlot(TWeakObjectPtr<UInventoryItem> InventoryItem, int32 SlotIndex);
 	void UpdateView();
+	bool SetLinkedSlotItem(TWeakObjectPtr<UInventoryItem> NewItem);
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* ItemIcon;
@@ -42,7 +44,6 @@ protected:
 	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
 private:
-	TWeakObjectPtr<AEquipmentItem> LinkedEquipmentItem;
 	TWeakObjectPtr<UInventoryItem> LinkedInventoryItem;
 
 	int32 SlotIndexInComponent = 0;

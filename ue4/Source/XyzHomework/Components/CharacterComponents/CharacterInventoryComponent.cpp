@@ -34,6 +34,13 @@ UCharacterInventoryComponent::UCharacterInventoryComponent()
 
 }
 
+void UCharacterInventoryComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	ItemSlots.AddDefaulted(Capacity);
+}
+
 void UCharacterInventoryComponent::CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
 {
 	CachedItemDataTable = InventoryItemDataTable;
@@ -94,7 +101,7 @@ bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType,
 	CachedItemDataTable = InventoryItemDataTable;
 
 	FInventorySlot* ItemSlot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType; });
-	if (ItemSlot)
+	if (ItemSlot && !ItemSlot->Item->IsEquipment())
 	{
 		ItemSlot->Item->SetCount(ItemSlot->Item->GetCount() + Amount);
 		ItemSlot->UpdateSlotState();
@@ -132,27 +139,33 @@ void UCharacterInventoryComponent::RemoveInventoryItem(EInventoryItemType ItemTy
 		return;
 	}
 
-	FInventorySlot* ItemSlot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType; });
-	if (ItemSlot)
+	FInventorySlot* Slot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType; });
+	RemoveInventoryItem(Slot, Amount);
+}
+
+void UCharacterInventoryComponent::RemoveInventoryItem(int32 SlotIndex, int32 Amount)
+{
+	if (SlotIndex >= 0 && SlotIndex < ItemSlots.Num())
 	{
-		const TWeakObjectPtr<UInventoryItem> Item = ItemSlot->Item;
+		RemoveInventoryItem(&ItemSlots[SlotIndex], Amount);
+	}
+}
+
+void UCharacterInventoryComponent::RemoveInventoryItem(FInventorySlot* Slot, int32 Amount)
+{
+	if (Slot)
+	{
+		const TWeakObjectPtr<UInventoryItem> Item = Slot->Item;
 		if (Item->GetCount() > Amount)
 		{
 			Item->SetCount(Item->GetCount() - Amount);
 		}
 		else
 		{
-			ItemSlot->ClearSlot();
+			Slot->ClearSlot();
 			UsedSlotCount--;
 		}
 	}
 
-	ItemSlot->UpdateSlotState();
-}
-
-void UCharacterInventoryComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	ItemSlots.AddDefaulted(Capacity);
+	Slot->UpdateSlotState();
 }

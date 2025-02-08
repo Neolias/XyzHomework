@@ -3,25 +3,15 @@
 
 #include "EquipmentSlotWidget.h"
 
-#include "Actors/Equipment/EquipmentItem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Inventory/Items/InventoryItem.h"
 #include "UI/Widgets/Inventory/InventorySlotWidget.h"
 
-void UEquipmentSlotWidget::InitializeSlot(TWeakObjectPtr<AEquipmentItem> EquipmentItem, int32 SlotIndex)
+void UEquipmentSlotWidget::InitializeSlot(TWeakObjectPtr<UInventoryItem> InventoryItem, int32 SlotIndex)
 {
-	if (!EquipmentItem.IsValid())
-	{
-		return;
-	}
-
-	LinkedEquipmentItem = EquipmentItem;
-	if (EquipmentItem.IsValid())
-	{
-		LinkedInventoryItem = EquipmentItem->GetLinkedInventoryItem();
-	}
+	LinkedInventoryItem = InventoryItem;
 	SlotIndexInComponent = SlotIndex;
 }
 
@@ -39,10 +29,37 @@ void UEquipmentSlotWidget::UpdateView()
 	}
 }
 
+bool UEquipmentSlotWidget::SetLinkedSlotItem(TWeakObjectPtr<UInventoryItem> NewItem)
+{
+	if (NewItem.IsValid())
+	{
+		return OnEquipmentDropInSlot.Execute(NewItem->GetEquipmentItemClass(), SlotIndexInComponent);
+	}
+
+	LinkedInventoryItem.Reset();
+	OnEquipmentRemoveFromSlot.ExecuteIfBound(SlotIndexInComponent);
+	UpdateView();
+
+	return false;
+}
+
 FReply UEquipmentSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (!LinkedEquipmentItem.IsValid())
+	if (!LinkedInventoryItem.IsValid())
 	{
+		return FReply::Handled();
+	}
+
+	FKey MouseBtn = InMouseEvent.GetEffectingButton();
+	if (MouseBtn == EKeys::RightMouseButton)
+	{
+		/* Some simplification, so as not to complicate the architecture
+		 * - on instancing item, we use the current pawn as an outer one.
+		 * In real practice we need use callback for inform item holder what action was do in UI */
+
+		APawn* ItemOwner = Cast<APawn>(LinkedInventoryItem->GetOuter());
+		LinkedInventoryItem->RemoveFromEquipment(ItemOwner, SlotIndexInComponent);
+
 		return FReply::Handled();
 	}
 
@@ -54,11 +71,6 @@ void UEquipmentSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, con
 {
 	checkf(DragAndDropWidgetClass.Get() != nullptr, TEXT("UEquipmentSlotWidget::NativeOnDragDetected drag and drop widget is not defined"));
 
-	if (!LinkedInventoryItem.IsValid())
-	{
-		return;
-	}
-
 	UDragDropOperation* DragOperation = Cast<UDragDropOperation>(UWidgetBlueprintLibrary::CreateDragDropOperation(UDragDropOperation::StaticClass()));
 
 	/* Some simplification for not define new widget for drag and drop operation  */
@@ -67,37 +79,42 @@ void UEquipmentSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, con
 
 	DragOperation->DefaultDragVisual = DragWidget;
 	DragOperation->Pivot = EDragPivot::CenterCenter;
+	LinkedInventoryItem->SetPreviousEquipmentSlotWidget(this);
 	DragOperation->Payload = LinkedInventoryItem.Get();
 	OutOperation = DragOperation;
 
-	LinkedEquipmentItem.Reset();
-	LinkedInventoryItem.Reset();
-	OnEquipmentRemoveFromSlot.ExecuteIfBound(SlotIndexInComponent);
-
-	UpdateView();
+	SetLinkedSlotItem(nullptr);
 }
 
 bool UEquipmentSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
-	const UInventoryItem* InventoryItem = Cast<UInventoryItem>(InOperation->Payload);
-	if (IsValid(InventoryItem))
+	bool Result = false;
+	const auto NewItem = TWeakObjectPtr<UInventoryItem>(Cast<UInventoryItem>(InOperation->Payload));
+	if (NewItem.IsValid())
 	{
-		return OnEquipmentDropInSlot.Execute(InventoryItem->GetEquipmentItemClass(), SlotIndexInComponent);
+		const auto CachedLinkedInventoryItem = LinkedInventoryItem;
+		Result = OnEquipmentDropInSlot.Execute(NewItem->GetEquipmentItemClass(), SlotIndexInComponent);
+		if (Result && CachedLinkedInventoryItem.IsValid())
+		{
+			UInventorySlotWidget* PreviousInventoryWidget = NewItem->GetPreviousInventorySlotWidget();
+			if (IsValid(PreviousInventoryWidget))
+			{
+				PreviousInventoryWidget->SetLinkedSlotItem(CachedLinkedInventoryItem);
+			}
+			else
+			{
+				UEquipmentSlotWidget* PreviousEquipmentWidget = NewItem->GetPreviousEquipmentSlotWidget();
+				if (IsValid(PreviousEquipmentWidget))
+				{
+					PreviousEquipmentWidget->SetLinkedSlotItem(CachedLinkedInventoryItem);
+				}
+			}
+		}
 	}
-	return false;
+	return Result;
 }
 
 void UEquipmentSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
-	if (!LinkedEquipmentItem.IsValid())
-	{
-		return;
-	}
-
-	LinkedInventoryItem = Cast<UInventoryItem>(InOperation->Payload);
-	LinkedEquipmentItem->SetLinkedInventoryItem(LinkedInventoryItem);
-	if (LinkedInventoryItem.IsValid())
-	{
-		OnEquipmentDropInSlot.Execute(LinkedInventoryItem->GetEquipmentItemClass(), SlotIndexInComponent);
-	}
+	SetLinkedSlotItem(Cast<UInventoryItem>(InOperation->Payload));
 }

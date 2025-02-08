@@ -18,10 +18,11 @@ class XYZHOMEWORK_API UEquipmentViewWidget : public UUserWidget
 
 public:
 	void InitializeWidget(UCharacterEquipmentComponent* EquipmentComponent);
+	void UpdateSlot(int32 SlotIndex);
+	UEquipmentSlotWidget* GetEquipmentSlotWidget(int32 SlotIndex) const;
 
 protected:
 	void AddSlotToView(AEquipmentItem* EquipmentItem, int32 SlotIndex);
-	void UpdateSlot(int32 SlotIndex);
 
 	bool EquipItem(const TSubclassOf<AEquipmentItem>& WeaponClass, int32 SenderIndex);
 	void UnequipItem(int32 SlotIndex);

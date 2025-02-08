@@ -8,6 +8,8 @@
 #include "UObject/NoExportTypes.h"
 #include "InventoryItem.generated.h"
 
+class UEquipmentSlotWidget;
+class UInventorySlotWidget;
 class UInventoryItem;
 class AEquipmentItem;
 class APickupItem;
@@ -49,21 +51,31 @@ class XYZHOMEWORK_API UInventoryItem : public UObject
 public:
 	void Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In);
 	bool IsInitialized() const { return bIsInitialized; }
+	bool IsEquipment() const { return bIsEquipment; }
 	EInventoryItemType GetItemType() const { return ItemType; }
 	TSubclassOf<AEquipmentItem> GetEquipmentItemClass() const { return EquipmentItemClass; }
 	const FInventoryItemDescription& GetDescription() const { return Description; }
 	int32 GetCount() const { return Count; }
 	void SetCount(const int32 NewCount) { Count = NewCount; }
+	UInventorySlotWidget* GetPreviousInventorySlotWidget() const { return PreviousInventorySlotWidget; }
+	UEquipmentSlotWidget* GetPreviousEquipmentSlotWidget() const { return PreviousEquipmentSlotWidget; }
+	void SetPreviousInventorySlotWidget(UInventorySlotWidget* SlotWidget);
+	void SetPreviousEquipmentSlotWidget(UEquipmentSlotWidget* SlotWidget);
 	virtual bool Consume(APawn* Pawn) { return false; }
-	virtual bool AddToEquipment(class AXyzBaseCharacter* BaseCharacter, EEquipmentItemSlot EquipmentItemSlot);
-	virtual void RemoveFromEquipment(class AXyzBaseCharacter* BaseCharacter, EEquipmentItemSlot EquipmentItemSlot);
+	virtual bool AddToEquipment(APawn* Pawn);
+	virtual bool RemoveFromEquipment(APawn* Pawn, int32 EquipmentSlotIndex);
 
 protected:
 	EInventoryItemType ItemType = EInventoryItemType::None;
 	TSubclassOf<AEquipmentItem> EquipmentItemClass;
+	UPROPERTY()
+	UInventorySlotWidget* PreviousInventorySlotWidget = nullptr;
+	UPROPERTY()
+	UEquipmentSlotWidget* PreviousEquipmentSlotWidget = nullptr;
 
 private:
 	FInventoryItemDescription Description;
 	bool bIsInitialized = false;
+	bool bIsEquipment = false;
 	int32 Count = 0;
 };

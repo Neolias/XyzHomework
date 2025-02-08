@@ -70,7 +70,7 @@ enum class EEquipmentItemSlot : uint8
 	PrimaryWeapon,
 	SecondaryWeapon,
 	PrimaryItem,
-	SecondaryItem,
+	//SecondaryItem,
 	MeleeWeapon,
 	Max UMETA(Hidden)
 };

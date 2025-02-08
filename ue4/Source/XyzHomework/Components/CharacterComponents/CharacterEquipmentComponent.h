@@ -6,6 +6,7 @@
 #include "XyzGenericEnums.h"
 #include "Actors/Projectiles/ProjectilePool.h"
 #include "Components/ActorComponent.h"
+#include "Inventory/Items/InventoryItem.h"
 #include "CharacterEquipmentComponent.generated.h"
 
 class UDataTable;
@@ -53,8 +54,8 @@ public:
 	void EquipFromDefaultItemSlot(const bool bShouldSkipAnimation = true);
 	void DrawNextItem();
 	void DrawPreviousItem();
-	bool AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, uint32 EquipmentSlotIndex);
-	void RemoveEquipmentItem(uint32 EquipmentSlotIndex);
+	bool AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, int32 EquipmentSlotIndex = -1);
+	TWeakObjectPtr<UInventoryItem> RemoveEquipmentItem(int32 EquipmentSlotIndex);
 	UFUNCTION(BlueprintCallable, Category = "Character Equipment Component")
 	bool EquipItemBySlotType(EEquipmentItemSlot EquipmentItemSlot, bool bShouldSkipAnimation = true);
 	void UnequipCurrentItem();
@@ -159,4 +160,5 @@ protected:
 	void Server_OnThrowItem(AXyzProjectile* ThrowableProjectile, const FVector ResetLocation);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_OnThrowItem(AXyzProjectile* ThrowableProjectile, const FVector ResetLocation);
+	bool TryIncreaseItemAmmo(AEquipmentItem* Item);
 };

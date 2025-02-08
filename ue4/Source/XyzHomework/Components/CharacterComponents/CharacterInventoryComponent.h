@@ -29,6 +29,7 @@ public:
 
 private:
 	mutable FInventorySlotUpdate OnInventorySlotUpdate;
+
 };
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -45,6 +46,8 @@ public:
 	bool IsViewInventoryVisible() const;
 	bool AddInventoryItem(EInventoryItemType ItemType, int32 Amount, UDataTable* InventoryItemDataTable);
 	void RemoveInventoryItem(EInventoryItemType ItemType, int32 Amount);
+	void RemoveInventoryItem(int32 SlotIndex, int32 Amount);
+	void RemoveInventoryItem(FInventorySlot* Slot, int32 Amount);
 
 protected:
 	virtual void BeginPlay() override;
@@ -55,6 +58,7 @@ protected:
 	TSubclassOf<UInventoryViewWidget> InventoryViewWidgetClass;
 
 private:
+
 	int32 UsedSlotCount = 0;
 	TArray<FInventorySlot> ItemSlots;
 	UPROPERTY()

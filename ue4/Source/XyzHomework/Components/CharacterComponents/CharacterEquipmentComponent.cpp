@@ -198,13 +198,12 @@ void UCharacterEquipmentComponent::CreateLoadout()
 	}
 }
 
-void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSlot,	TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh)
+void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh)
 {
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.Owner = BaseCharacter;
 	AEquipmentItem* Item = GetWorld()->SpawnActor<AEquipmentItem>(EquipmentItemClass, SpawnParameters);
 	Item->AttachToComponent(SkeletalMesh, FAttachmentTransformRules::KeepRelativeTransform, Item->GetUnequippedSocketName());
-	InitializeInventoryItem(Item);
 
 	ARangedWeaponItem* RangedWeaponItem = Cast<ARangedWeaponItem>(Item);
 	if (IsValid(RangedWeaponItem))
@@ -222,7 +221,7 @@ void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSl
 			else
 			{
 				const int32 AmmoToLoad = GetAvailableAmmoForWeaponMagazine(RangedWeaponItem);
-				EquipmentAmmoArray[(uint32)RangedWeaponItem->GetAmmoType()] -= AmmoToLoad;
+				EquipmentAmmoArray[(int32)RangedWeaponItem->GetAmmoType()] -= AmmoToLoad;
 				RangedWeaponItem->SetCurrentAmmo(AmmoToLoad);
 			}
 		}
@@ -239,10 +238,37 @@ void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSl
 		}
 	}
 
-	EquippedItemsArray[(uint32)EquipmentSlot] = Item;
+	InitializeInventoryItem(Item);
+	EquippedItemsArray[(int32)EquipmentSlot] = Item;
 }
 
-bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, uint32 EquipmentSlotIndex)
+bool UCharacterEquipmentComponent::TryIncreaseItemAmmo(AEquipmentItem* Item)
+{
+	ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(Item);
+	if (IsValid(RangedWeapon))
+	{
+		EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += RangedWeapon->GetMagazineSize();
+		// Update the player HUD even if the current equipped weapon is different
+		if (IsValid(GetCurrentRangedWeapon()))
+		{
+			OnCurrentWeaponAmmoChanged(GetCurrentRangedWeapon()->GetCurrentAmmo());
+		}
+		return true;
+	}
+
+	AThrowableItem* ThrowableItem = Cast<AThrowableItem>(Item);
+	if (IsValid(ThrowableItem))
+	{
+		const int32 ThrowableIndex = (int32)ThrowableItem->GetAmmoType();
+		EquipmentAmmoArray[ThrowableIndex] += 1;
+		OnCurrentThrowableAmmoChanged(EquipmentAmmoArray[ThrowableIndex]);
+		return true;
+	}
+
+	return false;
+}
+
+bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, int32 EquipmentSlotIndex/* = -1*/)
 {
 	if (EquipmentSlotIndex == 0 || !IsValid(BaseCharacter))
 	{
@@ -251,37 +277,60 @@ bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> 
 
 	CachedItemDataTable = BaseCharacter->GetInventoryItemDataTable();
 
-	const EEquipmentItemSlot EquipmentSlot = (EEquipmentItemSlot)EquipmentSlotIndex;
 	AEquipmentItem* DefaultItem = Cast<AEquipmentItem>(EquipmentItemClass->GetDefaultObject());
-	if (!IsValid(DefaultItem) || !DefaultItem->IsEquipmentSlotCompatible(EquipmentSlot))
+	if (!IsValid(DefaultItem))
 	{
 		return false;
 	}
 
-	// If an item of this type is already equipped
-	if (IsValid(EquippedItemsArray[EquipmentSlotIndex]))
+	// If the slot index is not provided, find a free slot or replace an equipped item
+	EEquipmentItemSlot EquipmentSlot = (EEquipmentItemSlot)EquipmentSlotIndex;
+	if (EquipmentSlotIndex == -1)
 	{
-		//ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(DefaultItem);
-		//if (IsValid(RangedWeapon))
-		//{
-		//	EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += RangedWeapon->GetMagazineSize();
-		//	// Update the player HUD even if the current weapon type is different
-		//	if (IsValid(GetCurrentRangedWeapon()))
-		//	{
-		//		OnCurrentWeaponAmmoChanged(GetCurrentRangedWeapon()->GetCurrentAmmo());
-		//	}
-		//	return false;
-		//}
+		EquipmentSlot = EEquipmentItemSlot::None;
+		for (const auto& Slot : DefaultItem->GetCompatibleEquipmentSlots())
+		{
+			AEquipmentItem* EquippedItem = EquippedItemsArray[(int32)Slot];
 
-		//AThrowableItem* ThrowableItem = Cast<AThrowableItem>(DefaultItem);
-		//if (IsValid(ThrowableItem))
-		//{
-		//	const int32 ThrowableIndex = (int32)ThrowableItem->GetAmmoType();
-		//	EquipmentAmmoArray[ThrowableIndex] += 1;
-		//	OnCurrentThrowableAmmoChanged(EquipmentAmmoArray[ThrowableIndex]);
-		//	return false;
-		//}
+			if (IsValid(EquippedItem))
+			{
+				if (EquippedItem->GetEquipmentItemType() == DefaultItem->GetEquipmentItemType())
+				{
+					continue;
+				}
+				EquipmentSlot = EquipmentSlot == EEquipmentItemSlot::None ? Slot : EquipmentSlot;
+			}
+			else
+			{
+				EquipmentSlot = Slot;
+				break;
+			}
+		}
+	}
+
+	if (!DefaultItem->IsEquipmentSlotCompatible(EquipmentSlot))
+	{
 		return false;
+	}
+
+	// If an item is already equipped
+	AEquipmentItem* EquippedItem = EquippedItemsArray[(int32)EquipmentSlot];
+	if (IsValid(EquippedItem))
+	{
+		if (EquippedItem->GetEquipmentItemType() == DefaultItem->GetEquipmentItemType())
+		{
+			//if (TryIncreaseItemAmmo(DefaultItem))
+			//{
+			//	return true;
+			//}
+			return false;
+		}
+
+		const TWeakObjectPtr<UInventoryItem> InventoryItem = EquippedItem->GetLinkedInventoryItem();
+		if (InventoryItem.IsValid() && !InventoryItem->RemoveFromEquipment(BaseCharacter, (int32)EquipmentSlot))
+		{
+			return false;
+		}
 	}
 
 	USkeletalMeshComponent* SkeletalMesh = BaseCharacter->GetMesh();
@@ -290,16 +339,29 @@ bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> 
 		return false;
 	}
 	LoadoutOneItem(EquipmentSlot, EquipmentItemClass, SkeletalMesh);
+
+	if (IsValid(EquipmentViewWidget))
+	{
+		EquipmentViewWidget->UpdateSlot((int32)EquipmentSlot);
+	}
+
 	EquipPreviousItemIfUnequipped(false);
 
 	return true;
 }
 
-void UCharacterEquipmentComponent::RemoveEquipmentItem(uint32 EquipmentSlotIndex)
+TWeakObjectPtr<UInventoryItem> UCharacterEquipmentComponent::RemoveEquipmentItem(int32 EquipmentSlotIndex)
 {
+	TWeakObjectPtr<UInventoryItem> Result = nullptr;
+
 	if (CurrentSlotIndex == EquipmentSlotIndex)
 	{
 		UnequipCurrentItem();
+	}
+
+	if (EquipmentSlotIndex > EquippedItemsArray.Num())
+	{
+		return Result;
 	}
 
 	AEquipmentItem* Item = EquippedItemsArray[EquipmentSlotIndex];
@@ -321,9 +383,17 @@ void UCharacterEquipmentComponent::RemoveEquipmentItem(uint32 EquipmentSlotIndex
 			}
 		}
 
+		Result = Item->GetLinkedInventoryItem();
 		Item->Destroy();
 		EquippedItemsArray[EquipmentSlotIndex] = nullptr;
 	}
+
+	if (IsValid(EquipmentViewWidget))
+	{
+		EquipmentViewWidget->UpdateSlot(EquipmentSlotIndex);
+	}
+
+	return Result;
 }
 
 void UCharacterEquipmentComponent::EquipFromDefaultItemSlot(const bool bShouldSkipAnimation/* = true*/)
@@ -721,6 +791,7 @@ void UCharacterEquipmentComponent::InitializeInventoryItem(AEquipmentItem* Equip
 		{
 			const TWeakObjectPtr<UInventoryItem> NewItem = NewObject<UInventoryItem>(GetOwner(), ItemData->InventoryItemClass);
 			NewItem->Initialize(ItemType, ItemData->InventoryItemDescription, ItemData->EquipmentItemClass);
+			NewItem->SetCount(1);
 			EquipmentItem->SetLinkedInventoryItem(NewItem);
 		}
 	}

@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "InventorySlotWidget.generated.h"
 
+class UInventoryItem;
 struct FInventorySlot;
 class UImage;
 
@@ -18,6 +19,8 @@ public:
 	void InitializeSlot(FInventorySlot& InventorySlot);
 	void UpdateView();
 	void SetItemIcon(UTexture2D* Icon);
+	void SetLinkedSlotItem(TWeakObjectPtr<UInventoryItem> NewItem);
+	FInventorySlot* GetLinkedSlot() const { return LinkedSlot; }
 
 protected:
 	UPROPERTY(meta = (BindWidget))

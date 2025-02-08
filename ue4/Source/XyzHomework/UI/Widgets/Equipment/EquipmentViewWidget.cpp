@@ -8,6 +8,16 @@
 #include "Components/VerticalBox.h"
 #include "Components/CharacterComponents/CharacterEquipmentComponent.h"
 
+UEquipmentSlotWidget* UEquipmentViewWidget::GetEquipmentSlotWidget(int32 SlotIndex) const
+{
+	if (!IsValid(ItemSlots) || SlotIndex < 1 || SlotIndex - 1 >= ItemSlots->GetChildrenCount())
+	{
+		return nullptr;
+	}
+
+	return Cast<UEquipmentSlotWidget>(ItemSlots->GetChildAt(SlotIndex - 1));
+}
+
 void UEquipmentViewWidget::InitializeWidget(UCharacterEquipmentComponent* EquipmentComponent)
 {
 	CachedEquipmentComponent = EquipmentComponent;
@@ -24,41 +34,42 @@ void UEquipmentViewWidget::AddSlotToView(AEquipmentItem* EquipmentItem, int32 Sl
 	checkf(IsValid(DefaultSlotViewClass.Get()), TEXT("UEquipmentViewWidget::AddEquipmentSlotView equipment slot widget is not set"));
 
 	UEquipmentSlotWidget* SlotWidget = CreateWidget<UEquipmentSlotWidget>(this, DefaultSlotViewClass);
-
 	if (IsValid(SlotWidget))
 	{
-
-		SlotWidget->InitializeSlot(EquipmentItem, SlotIndex);
-
+		if (IsValid(EquipmentItem))
+		{
+			SlotWidget->InitializeSlot(EquipmentItem->GetLinkedInventoryItem(), SlotIndex);
+			SlotWidget->OnEquipmentDropInSlot.BindUObject(this, &UEquipmentViewWidget::EquipItem);
+			SlotWidget->OnEquipmentRemoveFromSlot.BindUObject(this, &UEquipmentViewWidget::UnequipItem);
+		}
+		// Use the code below to hide empty equipment slots
+		//else
+		//{
+		//	SlotWidget->SetVisibility(ESlateVisibility::Collapsed);
+		//}
 		ItemSlots->AddChildToVerticalBox(SlotWidget);
 		SlotWidget->UpdateView();
-		SlotWidget->OnEquipmentDropInSlot.BindUObject(this, &UEquipmentViewWidget::EquipItem);
-		SlotWidget->OnEquipmentRemoveFromSlot.BindUObject(this, &UEquipmentViewWidget::UnequipItem);
 	}
 }
 
 void UEquipmentViewWidget::UpdateSlot(int32 SlotIndex)
 {
-	UEquipmentSlotWidget* WidgetToUpdate = Cast<UEquipmentSlotWidget>(ItemSlots->GetChildAt(SlotIndex - 1));
+	UEquipmentSlotWidget* WidgetToUpdate = GetEquipmentSlotWidget(SlotIndex);
 	if (IsValid(WidgetToUpdate))
 	{
-		WidgetToUpdate->InitializeSlot(CachedEquipmentComponent->GetEquippedItems()[SlotIndex], SlotIndex);
+		const AEquipmentItem* EquipmentItem = CachedEquipmentComponent->GetEquippedItems()[SlotIndex];
+		const auto InventoryItem = IsValid(EquipmentItem) ? EquipmentItem->GetLinkedInventoryItem() : nullptr;
+		WidgetToUpdate->InitializeSlot(InventoryItem, SlotIndex);
 		WidgetToUpdate->UpdateView();
 	}
 }
 
 bool UEquipmentViewWidget::EquipItem(const TSubclassOf<AEquipmentItem>& WeaponClass, int32 SlotIndex)
 {
-	const bool Result = CachedEquipmentComponent->AddEquipmentItem(WeaponClass, SlotIndex);
-	if (Result)
-	{
-		UpdateSlot(SlotIndex);
-	}
-	return Result;
+	return CachedEquipmentComponent->AddEquipmentItem(WeaponClass, SlotIndex);
 }
 
 void UEquipmentViewWidget::UnequipItem(int32 SlotIndex)
 {
 	CachedEquipmentComponent->RemoveEquipmentItem(SlotIndex);
-	UpdateSlot(SlotIndex);
 }
