@@ -50,37 +50,33 @@ class XYZHOMEWORK_API UInventoryItem : public UObject
 	GENERATED_BODY()
 
 public:
-	void Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In = nullptr);
-	bool IsEquipment() const { return bIsEquipment; }
-	bool CanStackItems() const { return bCanStackItems; }
-	EInventoryItemType GetItemType() const { return ItemType; }
-	TSubclassOf<AEquipmentItem> GetEquipmentItemClass() const { return EquipmentItemClass; }
-	const FInventoryItemDescription& GetDescription() const { return Description; }
-	int32 GetCount() const { return Count; }
-	void SetCount(const int32 NewCount);
-	int32 GetMaxCount() const { return MaxCount; }
-	int32 AddCount(int32 Value);
-	int32 GetAvailableSpaceInStack() const;
-	UInventorySlotWidget* GetPreviousInventorySlotWidget() const { return PreviousInventorySlotWidget; }
-	UEquipmentSlotWidget* GetPreviousEquipmentSlotWidget() const { return PreviousEquipmentSlotWidget; }
-	void SetPreviousInventorySlotWidget(UInventorySlotWidget* SlotWidget);
-	void SetPreviousEquipmentSlotWidget(UEquipmentSlotWidget* SlotWidget);
+	virtual void Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In = nullptr);
+	virtual bool IsEquipment() const { return bIsEquipment; }
+	virtual bool CanStackItems() const { return Description.bCanStackItems; }
+	virtual EInventoryItemType GetItemType() const { return ItemType; }
+	virtual TSubclassOf<AEquipmentItem> GetEquipmentItemClass() const { return EquipmentItemClass; }
+	virtual const FInventoryItemDescription& GetDescription() const { return Description; }
+	virtual int32 GetCount() const { return Count; }
+	virtual void SetCount(const int32 NewCount);
+	virtual int32 GetMaxCount() const { return Description.MaxCount; }
+	virtual int32 AddCount(int32 Value);
+	virtual int32 GetAvailableSpaceInStack() const;
+	virtual UInventorySlotWidget* GetPreviousInventorySlotWidget() const { return PreviousInventorySlotWidget; }
+	virtual UEquipmentSlotWidget* GetPreviousEquipmentSlotWidget() const { return PreviousEquipmentSlotWidget; }
+	virtual void SetPreviousInventorySlotWidget(UInventorySlotWidget* SlotWidget);
+	virtual void SetPreviousEquipmentSlotWidget(UEquipmentSlotWidget* SlotWidget);
 	virtual bool Consume(APawn* Pawn) { return false; }
 	virtual bool AddToEquipment(APawn* Pawn);
 	virtual bool RemoveFromEquipment(APawn* Pawn, int32 EquipmentSlotIndex);
 
 protected:
 	EInventoryItemType ItemType = EInventoryItemType::None;
+	FInventoryItemDescription Description;
 	TSubclassOf<AEquipmentItem> EquipmentItemClass;
+	bool bIsEquipment = false;
+	int32 Count = 0;
 	UPROPERTY()
 	UInventorySlotWidget* PreviousInventorySlotWidget = nullptr;
 	UPROPERTY()
 	UEquipmentSlotWidget* PreviousEquipmentSlotWidget = nullptr;
-
-private:
-	FInventoryItemDescription Description;
-	bool bIsEquipment = false;
-	bool bCanStackItems = false;
-	int32 Count = 0;
-	int32 MaxCount = 0;
 };

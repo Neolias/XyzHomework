@@ -14,17 +14,14 @@
 void UInventoryItem::Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In/* = nullptr*/)
 {
 	ItemType = ItemType_In;
-	Description.Icon = Description_In.Icon;
-	Description.Name = Description_In.Name;
-	bCanStackItems = Description_In.bCanStackItems;
-	MaxCount = Description_In.MaxCount;
+	Description = Description_In;
 	EquipmentItemClass = EquipmentItemClass_In;
 	bIsEquipment = IsValid(EquipmentItemClass_In);
 }
 
 void UInventoryItem::SetCount(const int32 NewCount)
 {
-	Count = FMath::Clamp(NewCount, 0, MaxCount);
+	Count = FMath::Clamp(NewCount, 0, Description.MaxCount);
 }
 
 int32 UInventoryItem::AddCount(const int32 Value)
@@ -36,7 +33,7 @@ int32 UInventoryItem::AddCount(const int32 Value)
 
 int32 UInventoryItem::GetAvailableSpaceInStack() const
 {
-	return CanStackItems() ? MaxCount - Count : 0;
+	return CanStackItems() ? Description.MaxCount - Count : 0;
 }
 
 void UInventoryItem::SetPreviousInventorySlotWidget(UInventorySlotWidget* SlotWidget)
