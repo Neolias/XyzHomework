@@ -24,10 +24,10 @@ void UInventoryViewWidget::AddSlotToView(FInventorySlot& SlotToAdd)
 	{
 		SlotWidget->InitializeSlot(SlotToAdd);
 
-		const int32 CurrentSlotCount = GridPanelItemSlots->GetChildrenCount();
+		const int32 CurrentSlotCount = ItemSlots->GetChildrenCount();
 		const int32 CurrentSlotRow = CurrentSlotCount / ColumnCount;
 		const int32 CurrentSlotColumn = CurrentSlotCount % ColumnCount;
-		GridPanelItemSlots->AddChildToGrid(SlotWidget, CurrentSlotRow, CurrentSlotColumn);
+		ItemSlots->AddChildToGrid(SlotWidget, CurrentSlotRow, CurrentSlotColumn);
 
 		SlotWidget->UpdateView();
 	}

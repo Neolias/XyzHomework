@@ -52,7 +52,7 @@ public:
 	USkeletalMeshComponent* GetMesh() const { return MeshComponent; }
 	UWeaponMuzzleComponent* GetMuzzleComponent() const { return MuzzleComponent; }
 	bool IsReloading() const { return bIsReloading; }
-	EWeaponAmmoType GetAmmoType() { return IsCurrentWeaponModeValid() ? CurrentWeaponMode->AmmoType : EWeaponAmmoType::None; }
+	virtual EWeaponAmmoType GetAmmoType() override;
 	int32 GetMagazineSize() { return IsCurrentWeaponModeValid() ? CurrentWeaponMode->MagazineSize : 1; }
 	EWeaponReloadType GetReloadType() { return IsCurrentWeaponModeValid() ? CurrentWeaponMode->ReloadType : EWeaponReloadType::ByClip; }
 	FName GetReloadLoopStartSectionName() { return IsCurrentWeaponModeValid() ? CurrentWeaponMode->ReloadLoopStartSectionName : FName("ReloadLoopStart"); }

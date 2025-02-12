@@ -11,14 +11,32 @@
 #include "UI/Widgets/Equipment/EquipmentViewWidget.h"
 #include "UI/Widgets/Inventory/InventorySlotWidget.h"
 
-void UInventoryItem::Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In)
+void UInventoryItem::Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In/* = nullptr*/)
 {
 	ItemType = ItemType_In;
 	Description.Icon = Description_In.Icon;
 	Description.Name = Description_In.Name;
 	bCanStackItems = Description_In.bCanStackItems;
+	MaxCount = Description_In.MaxCount;
 	EquipmentItemClass = EquipmentItemClass_In;
 	bIsEquipment = IsValid(EquipmentItemClass_In);
+}
+
+void UInventoryItem::SetCount(const int32 NewCount)
+{
+	Count = FMath::Clamp(NewCount, 0, MaxCount);
+}
+
+int32 UInventoryItem::AddCount(const int32 Value)
+{
+	const int32 OldCount = Count;
+	SetCount(Count + Value);
+	return Count - OldCount;
+}
+
+int32 UInventoryItem::GetAvailableSpaceInStack() const
+{
+	return CanStackItems() ? MaxCount - Count : 0;
 }
 
 void UInventoryItem::SetPreviousInventorySlotWidget(UInventorySlotWidget* SlotWidget)
@@ -40,13 +58,10 @@ bool UInventoryItem::AddToEquipment(APawn* Pawn)
 		return false;
 	}
 
-	bool Result = false;
 	const AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(Pawn);
 	if (IsValid(BaseCharacter))
 	{
-		Result = BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(EquipmentItemClass);
-
-		if (Result)
+		if (BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(EquipmentItemClass, Count))
 		{
 			if (IsValid(PreviousInventorySlotWidget))
 			{
@@ -56,24 +71,29 @@ bool UInventoryItem::AddToEquipment(APawn* Pawn)
 			{
 				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, Count);
 			}
+
+			return true;
 		}
 	}
 
-	return Result;
+	return false;
 }
 
 bool UInventoryItem::RemoveFromEquipment(APawn* Pawn, int32 EquipmentSlotIndex)
 {
-	bool Result = false;
 	const AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(Pawn);
 	if (IsValid(BaseCharacter))
 	{
-		Result = BaseCharacter->GetCharacterInventoryComponent()->AddInventoryItem(ItemType, Count, BaseCharacter->GetInventoryItemDataTable());
-		if (Result)
+		if (BaseCharacter->GetCharacterInventoryComponent()->AddInventoryItem(ItemType, Count, BaseCharacter->GetInventoryItemDataTable()))
 		{
-			BaseCharacter->GetCharacterEquipmentComponent()->RemoveEquipmentItem(EquipmentSlotIndex);
+			if (BaseCharacter->GetCharacterEquipmentComponent()->RemoveEquipmentItem(EquipmentSlotIndex))
+			{
+				return true;
+			}
+
+			BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, Count);
 		}
 	}
 
-	return Result;
+	return false;
 }

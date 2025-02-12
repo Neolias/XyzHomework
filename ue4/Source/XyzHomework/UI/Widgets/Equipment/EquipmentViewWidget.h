@@ -6,10 +6,10 @@
 #include "Blueprint/UserWidget.h"
 #include "EquipmentViewWidget.generated.h"
 
+class UGridPanel;
 class UCharacterEquipmentComponent;
 class UEquipmentSlotWidget;
 class AEquipmentItem;
-class UVerticalBox;
 
 UCLASS()
 class XYZHOMEWORK_API UEquipmentViewWidget : public UUserWidget
@@ -24,11 +24,12 @@ public:
 protected:
 	void AddSlotToView(AEquipmentItem* EquipmentItem, int32 SlotIndex);
 
-	bool EquipItem(const TSubclassOf<AEquipmentItem>& WeaponClass, int32 SenderIndex);
-	void UnequipItem(int32 SlotIndex);
+	bool EquipItem(const TSubclassOf<AEquipmentItem>& WeaponClass, int32 Amount, int32 SenderIndex);
+	bool UnequipItem(int32 SlotIndex);
+	void UpdateEquipment(int32 SlotIndex);
 
 	UPROPERTY(meta = (BindWidget))
-	UVerticalBox* ItemSlots;
+	UGridPanel* ItemSlots;
 
 	UPROPERTY(EditDefaultsOnly, Category = "ItemContainer View Settings")
 	TSubclassOf<UEquipmentSlotWidget> DefaultSlotViewClass;

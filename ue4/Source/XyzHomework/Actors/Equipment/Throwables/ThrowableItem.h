@@ -23,7 +23,7 @@ public:
 	FOnThrowAnimationFinishedEvent OnThrowAnimationFinishedEvent;
 
 	AThrowableItem();
-	EWeaponAmmoType GetAmmoType() const { return AmmoType; }
+	virtual EWeaponAmmoType GetAmmoType() override;
 	TSubclassOf<AXyzProjectile> GetProjectileClass() const { return ProjectileClass; }
 	float GetThrowingWalkSpeed() const { return ThrowingWalkSpeed; }
 	bool IsThrowing() const { return bIsThrowing; }

@@ -26,6 +26,8 @@ public:
 	UTexture2D* Icon;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bCanStackItems = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bCanStackItems"))
+	int32 MaxCount = 1;
 };
 
 USTRUCT(BlueprintType)
@@ -48,14 +50,17 @@ class XYZHOMEWORK_API UInventoryItem : public UObject
 	GENERATED_BODY()
 
 public:
-	void Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In);
+	void Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In = nullptr);
 	bool IsEquipment() const { return bIsEquipment; }
 	bool CanStackItems() const { return bCanStackItems; }
 	EInventoryItemType GetItemType() const { return ItemType; }
 	TSubclassOf<AEquipmentItem> GetEquipmentItemClass() const { return EquipmentItemClass; }
 	const FInventoryItemDescription& GetDescription() const { return Description; }
 	int32 GetCount() const { return Count; }
-	void SetCount(const int32 NewCount) { Count = NewCount; }
+	void SetCount(const int32 NewCount);
+	int32 GetMaxCount() const { return MaxCount; }
+	int32 AddCount(int32 Value);
+	int32 GetAvailableSpaceInStack() const;
 	UInventorySlotWidget* GetPreviousInventorySlotWidget() const { return PreviousInventorySlotWidget; }
 	UEquipmentSlotWidget* GetPreviousEquipmentSlotWidget() const { return PreviousEquipmentSlotWidget; }
 	void SetPreviousInventorySlotWidget(UInventorySlotWidget* SlotWidget);
@@ -77,4 +82,5 @@ private:
 	bool bIsEquipment = false;
 	bool bCanStackItems = false;
 	int32 Count = 0;
+	int32 MaxCount = 0;
 };

@@ -28,20 +28,20 @@ void UEquipmentSlotWidget::UpdateView()
 		ItemIcon->SetBrushFromTexture(nullptr);
 		ItemName->SetText(FText::FromName(NAME_None));
 	}
+
+	OnEquipmentSlotUpdated.ExecuteIfBound(SlotIndexInComponent);
 }
 
 bool UEquipmentSlotWidget::SetLinkedSlotItem(TWeakObjectPtr<UInventoryItem> NewItem)
 {
-	if (NewItem.IsValid())
+	const bool Result = NewItem.IsValid() ? OnEquipmentDropInSlot.Execute(NewItem->GetEquipmentItemClass(), NewItem->GetCount(), SlotIndexInComponent)
+		: OnEquipmentRemoveFromSlot.Execute(SlotIndexInComponent);
+
+	if (Result && LinkedInventoryItem.IsValid())
 	{
-		return OnEquipmentDropInSlot.Execute(NewItem->GetEquipmentItemClass(), SlotIndexInComponent);
+		LinkedInventoryItem->SetPreviousEquipmentSlotWidget(this);
 	}
-
-	LinkedInventoryItem.Reset();
-	OnEquipmentRemoveFromSlot.ExecuteIfBound(SlotIndexInComponent);
-	UpdateView();
-
-	return false;
+	return Result;
 }
 
 FReply UEquipmentSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -58,6 +58,7 @@ FReply UEquipmentSlotWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry
 		 * - on instancing item, we use the current pawn as an outer one.
 		 * In real practice we need use callback for inform item holder what action was do in UI */
 
+		LinkedInventoryItem->SetPreviousEquipmentSlotWidget(this);
 		APawn* ItemOwner = Cast<APawn>(LinkedInventoryItem->GetOuter());
 		LinkedInventoryItem->RemoveFromEquipment(ItemOwner, SlotIndexInComponent);
 
@@ -76,7 +77,7 @@ void UEquipmentSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, con
 
 	/* Some simplification for not define new widget for drag and drop operation  */
 	UInventorySlotWidget* DragWidget = CreateWidget<UInventorySlotWidget>(GetOwningPlayer(), DragAndDropWidgetClass);
-	DragWidget->SetItemIcon(LinkedInventoryItem->GetDescription().Icon);
+	DragWidget->UpdateView(LinkedInventoryItem);
 
 	DragOperation->DefaultDragVisual = DragWidget;
 	DragOperation->Pivot = EDragPivot::CenterCenter;
@@ -89,38 +90,98 @@ void UEquipmentSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, con
 
 bool UEquipmentSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
-	bool Result = false;
-	const auto NewItem = TWeakObjectPtr<UInventoryItem>(Cast<UInventoryItem>(InOperation->Payload));
-	if (NewItem.IsValid())
+	const auto PayloadItem = TWeakObjectPtr<UInventoryItem>(Cast<UInventoryItem>(InOperation->Payload));
+	if (!PayloadItem.IsValid() || !PayloadItem->IsEquipment())
 	{
-		if (!NewItem->IsEquipment())
-		{
-			return false;
-		}
-
-		const auto CachedLinkedInventoryItem = LinkedInventoryItem;
-		Result = OnEquipmentDropInSlot.Execute(NewItem->GetEquipmentItemClass(), SlotIndexInComponent);
-		if (Result && CachedLinkedInventoryItem.IsValid())
-		{
-			UInventorySlotWidget* PreviousInventoryWidget = NewItem->GetPreviousInventorySlotWidget();
-			if (IsValid(PreviousInventoryWidget))
-			{
-				PreviousInventoryWidget->SetLinkedSlotItem(CachedLinkedInventoryItem);
-			}
-			else
-			{
-				UEquipmentSlotWidget* PreviousEquipmentWidget = NewItem->GetPreviousEquipmentSlotWidget();
-				if (IsValid(PreviousEquipmentWidget))
-				{
-					PreviousEquipmentWidget->SetLinkedSlotItem(CachedLinkedInventoryItem);
-				}
-			}
-		}
+		return false;
 	}
-	return Result;
+
+	if (!LinkedInventoryItem.IsValid())
+	{
+		return SetLinkedSlotItem(PayloadItem);
+	}
+
+	const bool bCanStackItems = LinkedInventoryItem->GetItemType() == PayloadItem->GetItemType() && LinkedInventoryItem->GetAvailableSpaceInStack() > 0;
+
+	return bCanStackItems ? StackSlotItems(PayloadItem) : SwapSlotItems(PayloadItem);
 }
 
 void UEquipmentSlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
 	SetLinkedSlotItem(Cast<UInventoryItem>(InOperation->Payload));
+}
+
+bool UEquipmentSlotWidget::StackSlotItems(TWeakObjectPtr<UInventoryItem> OtherSlotItem)
+{
+	if (!LinkedInventoryItem.IsValid() || !OtherSlotItem.IsValid())
+	{
+		return false;
+	}
+
+	bool Result = false;
+	if (LinkedInventoryItem->CanStackItems() && OtherSlotItem->CanStackItems())
+	{
+		const int32 CurrentCount = LinkedInventoryItem->GetCount();
+		const int32 PayloadCount = OtherSlotItem->GetCount();
+		int32 Remainder = OtherSlotItem->GetCount();
+		Remainder -= LinkedInventoryItem->AddCount(Remainder);
+		if (Remainder)
+		{
+			OtherSlotItem->SetCount(Remainder);
+			Result = UpdatePreviousSlot(OtherSlotItem, OtherSlotItem);
+		}
+		else
+		{
+			Result = UpdatePreviousSlot(OtherSlotItem, nullptr);
+		}
+
+		if (!Result)
+		{
+			LinkedInventoryItem->SetCount(CurrentCount);
+			OtherSlotItem->SetCount(PayloadCount);
+		}
+
+		UpdateView();
+	}
+
+	return Result;
+}
+
+bool UEquipmentSlotWidget::SwapSlotItems(TWeakObjectPtr<UInventoryItem> OtherSlotItem)
+{
+	if (!OtherSlotItem.IsValid())
+	{
+		return false;
+	}
+
+	if (UpdatePreviousSlot(OtherSlotItem, LinkedInventoryItem))
+	{
+		if (SetLinkedSlotItem(OtherSlotItem))
+		{
+			return true;
+		}
+
+		UpdatePreviousSlot(OtherSlotItem, OtherSlotItem);
+	}
+
+	return false;
+}
+
+bool UEquipmentSlotWidget::UpdatePreviousSlot(TWeakObjectPtr<UInventoryItem> SlotReference, TWeakObjectPtr<UInventoryItem> NewSlotItem)
+{
+	UInventorySlotWidget* PreviousInventoryWidget = SlotReference->GetPreviousInventorySlotWidget();
+	if (IsValid(PreviousInventoryWidget))
+	{
+		PreviousInventoryWidget->SetLinkedSlotItem(NewSlotItem);
+		return true;
+	}
+
+	// Use the code below to make items swap [when dragging] within the equipment view widget
+	// Note that this causes a bug which adds duplicates to the inventory view widget
+	// Fix: avoid removing from equipment within UCharacterEquipmentComponent::AddEquipmentItem()
+
+	//UEquipmentSlotWidget* PreviousEquipmentWidget = SlotReference->GetPreviousEquipmentSlotWidget();
+	//return IsValid(PreviousEquipmentWidget) && PreviousEquipmentWidget->SetLinkedSlotItem(NewSlotItem);
+
+	return true;
 }

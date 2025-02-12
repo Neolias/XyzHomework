@@ -5,7 +5,7 @@
 
 #include "EquipmentSlotWidget.h"
 #include "Actors/Equipment/EquipmentItem.h"
-#include "Components/VerticalBox.h"
+#include "Components/GridPanel.h"
 #include "Components/CharacterComponents/CharacterEquipmentComponent.h"
 
 UEquipmentSlotWidget* UEquipmentViewWidget::GetEquipmentSlotWidget(int32 SlotIndex) const
@@ -41,13 +41,16 @@ void UEquipmentViewWidget::AddSlotToView(AEquipmentItem* EquipmentItem, int32 Sl
 			SlotWidget->InitializeSlot(EquipmentItem->GetLinkedInventoryItem(), SlotIndex);
 			SlotWidget->OnEquipmentDropInSlot.BindUObject(this, &UEquipmentViewWidget::EquipItem);
 			SlotWidget->OnEquipmentRemoveFromSlot.BindUObject(this, &UEquipmentViewWidget::UnequipItem);
+			SlotWidget->OnEquipmentSlotUpdated.BindUObject(this, &UEquipmentViewWidget::UpdateEquipment);
 		}
+
 		// Use the code below to hide empty equipment slots
+
 		//else
 		//{
 		//	SlotWidget->SetVisibility(ESlateVisibility::Collapsed);
 		//}
-		ItemSlots->AddChildToVerticalBox(SlotWidget);
+		ItemSlots->AddChildToGrid(SlotWidget, ItemSlots->GetChildrenCount(), 1);
 		SlotWidget->UpdateView();
 	}
 }
@@ -64,12 +67,17 @@ void UEquipmentViewWidget::UpdateSlot(int32 SlotIndex)
 	}
 }
 
-bool UEquipmentViewWidget::EquipItem(const TSubclassOf<AEquipmentItem>& WeaponClass, int32 SlotIndex)
+bool UEquipmentViewWidget::EquipItem(const TSubclassOf<AEquipmentItem>& WeaponClass, int32 Amount, int32 SlotIndex)
 {
-	return CachedEquipmentComponent->AddEquipmentItem(WeaponClass, SlotIndex);
+	return CachedEquipmentComponent->AddEquipmentItem(WeaponClass, Amount, SlotIndex);
 }
 
-void UEquipmentViewWidget::UnequipItem(int32 SlotIndex)
+bool UEquipmentViewWidget::UnequipItem(int32 SlotIndex)
 {
-	CachedEquipmentComponent->RemoveEquipmentItem(SlotIndex);
+	return CachedEquipmentComponent->RemoveEquipmentItem(SlotIndex);
+}
+
+void UEquipmentViewWidget::UpdateEquipment(int32 SlotIndex)
+{
+	CachedEquipmentComponent->OnEquipmentSlotUpdated(SlotIndex);
 }

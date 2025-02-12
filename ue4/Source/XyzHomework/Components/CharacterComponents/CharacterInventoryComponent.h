@@ -40,6 +40,7 @@ class XYZHOMEWORK_API UCharacterInventoryComponent : public UActorComponent
 public:
 	UCharacterInventoryComponent();
 
+	void SetInventoryDataTable(UDataTable* InventoryItemDataTable);
 	void CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
 	void OpenViewInventory(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
 	void CloseViewInventory();
@@ -58,6 +59,8 @@ protected:
 	TSubclassOf<UInventoryViewWidget> InventoryViewWidgetClass;
 
 private:
+	int32 StackItems(EInventoryItemType ItemType, int32 Amount);
+	bool FillEmptySlots(EInventoryItemType ItemType, int32 Amount);
 
 	int32 UsedSlotCount = 0;
 	TArray<FInventorySlot> ItemSlots;

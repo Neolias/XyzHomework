@@ -18,11 +18,13 @@ class XYZHOMEWORK_API UEquipmentSlotWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	DECLARE_DELEGATE_RetVal_TwoParams(bool, FOnEquipmentDropInSlot, const TSubclassOf<AEquipmentItem>&, int32);
-	DECLARE_DELEGATE_OneParam(FOnEquipmentRemoveFromSlot, int32);
+	DECLARE_DELEGATE_RetVal_ThreeParams(bool, FOnEquipmentDropInSlot, const TSubclassOf<AEquipmentItem>&, int32, int32);
+	DECLARE_DELEGATE_RetVal_OneParam(bool, FOnEquipmentRemoveFromSlot, int32);
+	DECLARE_DELEGATE_OneParam(FOnEquipmentSlotUpdated, int32)
 
 	FOnEquipmentDropInSlot OnEquipmentDropInSlot;
 	FOnEquipmentRemoveFromSlot OnEquipmentRemoveFromSlot;
+	FOnEquipmentSlotUpdated OnEquipmentSlotUpdated;
 
 	void InitializeSlot(TWeakObjectPtr<UInventoryItem> InventoryItem, int32 SlotIndex);
 	void UpdateView();
@@ -46,4 +48,8 @@ protected:
 private:
 	TWeakObjectPtr<UInventoryItem> LinkedInventoryItem;
 	int32 SlotIndexInComponent = 0;
+
+	bool StackSlotItems(TWeakObjectPtr<UInventoryItem> OtherSlotItem);
+	bool SwapSlotItems(TWeakObjectPtr<UInventoryItem> OtherSlotItem);
+	bool UpdatePreviousSlot(TWeakObjectPtr<UInventoryItem> SlotReference, TWeakObjectPtr<UInventoryItem> NewSlotItem);
 };

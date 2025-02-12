@@ -20,7 +20,7 @@ public:
 
 protected:
 	UPROPERTY(meta = (BindWidget))
-	UGridPanel* GridPanelItemSlots;
+	UGridPanel* ItemSlots;
 
 	UPROPERTY(EditDefaultsOnly, Category = "ItemSlots")
 	TSubclassOf<UInventorySlotWidget> InventorySlotWidgetClass;

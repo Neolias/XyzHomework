@@ -34,6 +34,14 @@ UCharacterInventoryComponent::UCharacterInventoryComponent()
 
 }
 
+void UCharacterInventoryComponent::SetInventoryDataTable(UDataTable* InventoryItemDataTable)
+{
+	if (CachedItemDataTable != InventoryItemDataTable)
+	{
+		CachedItemDataTable = InventoryItemDataTable;
+	}
+}
+
 void UCharacterInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -43,7 +51,7 @@ void UCharacterInventoryComponent::BeginPlay()
 
 void UCharacterInventoryComponent::CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
 {
-	CachedItemDataTable = InventoryItemDataTable;
+	SetInventoryDataTable(InventoryItemDataTable);
 
 	if (IsValid(InventoryViewWidget))
 	{
@@ -61,7 +69,7 @@ void UCharacterInventoryComponent::CreateViewWidget(APlayerController* PlayerCon
 
 void UCharacterInventoryComponent::OpenViewInventory(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
 {
-	CachedItemDataTable = InventoryItemDataTable;
+	SetInventoryDataTable(InventoryItemDataTable);
 
 	if (!IsValid(InventoryViewWidget))
 	{
@@ -98,17 +106,66 @@ bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType,
 		return false;
 	}
 
-	CachedItemDataTable = InventoryItemDataTable;
+	SetInventoryDataTable(InventoryItemDataTable);
 
-	FInventorySlot* ItemSlot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType; });
-	if (ItemSlot && ItemSlot->Item->CanStackItems())
+	const int32 Remainder = StackItems(ItemType, Amount);
+	if (Remainder == -1) // Indicates error
 	{
-		ItemSlot->Item->SetCount(ItemSlot->Item->GetCount() + Amount);
-		ItemSlot->UpdateSlotState();
+		return false;
+	}
+
+	return FillEmptySlots(ItemType, Remainder);
+}
+
+int32 UCharacterInventoryComponent::StackItems(EInventoryItemType ItemType, int32 Amount)
+{
+	if (Amount < 1)
+	{
+		return 0;
+	}
+
+	TArray<FInventorySlot*> CompatibleItemSlots;
+	int32 MaxCountPerSlot = 0;
+	int32 AvailableSpaceInSlots = 0;
+	for (FInventorySlot& Slot : ItemSlots)
+	{
+		if (Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType && Slot.Item->CanStackItems())
+		{
+			CompatibleItemSlots.Add(&Slot);
+			MaxCountPerSlot = Slot.Item->GetMaxCount();
+			AvailableSpaceInSlots += MaxCountPerSlot - Slot.Item->GetCount();
+		}
+	}
+
+	if (CompatibleItemSlots.Num() > 0 && Amount > AvailableSpaceInSlots + (Capacity - UsedSlotCount) * MaxCountPerSlot)
+	{
+		return -1; // indicates error
+	}
+
+	int32 Remainder = Amount;
+	for (FInventorySlot* Slot : CompatibleItemSlots)
+	{
+		Remainder -= Slot->Item->AddCount(Remainder);
+		Slot->UpdateSlotState();
+
+		if (Remainder == 0)
+		{
+			break;
+		}
+	}
+	return Remainder;
+}
+
+bool UCharacterInventoryComponent::FillEmptySlots(EInventoryItemType ItemType, int32 Amount)
+{
+	if (Amount < 1)
+	{
 		return true;
 	}
 
-	if (UsedSlotCount >= Capacity)
+	int32 Remainder = Amount;
+	const int32 FreeSlotCount = Capacity - UsedSlotCount;
+	if (Remainder && !FreeSlotCount)
 	{
 		return false;
 	}
@@ -120,21 +177,29 @@ bool UCharacterInventoryComponent::AddInventoryItem(EInventoryItemType ItemType,
 
 		if (ItemData)
 		{
-			FInventorySlot* FreeSlot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return !Slot.Item.IsValid(); });
-			if (FreeSlot)
+			const int32 RequiredSlotCount = FMath::CeilToInt((float)Remainder / ItemData->InventoryItemDescription.MaxCount);
+			if (RequiredSlotCount > FreeSlotCount)
 			{
-				const TWeakObjectPtr<UInventoryItem> NewItem = NewObject<UInventoryItem>(GetOwner(), ItemData->InventoryItemClass);
-				NewItem->Initialize(ItemType, ItemData->InventoryItemDescription, ItemData->EquipmentItemClass);
-				NewItem->SetCount(NewItem->GetCount() + Amount);
-				FreeSlot->Item = NewItem;
-				FreeSlot->UpdateSlotState();
-				UsedSlotCount++;
-				return true;
+				return false;
+			}
+
+			for (int32 i = 0; i < RequiredSlotCount; ++i)
+			{
+				FInventorySlot* FreeSlot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return !Slot.Item.IsValid(); });
+				if (FreeSlot)
+				{
+					const TWeakObjectPtr<UInventoryItem> NewItem = NewObject<UInventoryItem>(GetOwner(), ItemData->InventoryItemClass);
+					NewItem->Initialize(ItemType, ItemData->InventoryItemDescription, ItemData->EquipmentItemClass);
+					Remainder -= NewItem->AddCount(Remainder);
+					FreeSlot->Item = NewItem;
+					FreeSlot->UpdateSlotState();
+					UsedSlotCount++;
+				}
 			}
 		}
 	}
 
-	return false;
+	return Remainder == 0;
 }
 
 void UCharacterInventoryComponent::RemoveInventoryItem(EInventoryItemType ItemType, int32 Amount)
@@ -144,8 +209,8 @@ void UCharacterInventoryComponent::RemoveInventoryItem(EInventoryItemType ItemTy
 		return;
 	}
 
-	FInventorySlot* Slot = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType; });
-	RemoveInventoryItem(Slot, Amount);
+	FInventorySlot* SlotToRemove = ItemSlots.FindByPredicate([=](const FInventorySlot& Slot) {return Slot.Item.IsValid() && Slot.Item->GetItemType() == ItemType; });
+	RemoveInventoryItem(SlotToRemove, Amount);
 }
 
 void UCharacterInventoryComponent::RemoveInventoryItem(int32 SlotIndex, int32 Amount)
@@ -158,12 +223,11 @@ void UCharacterInventoryComponent::RemoveInventoryItem(int32 SlotIndex, int32 Am
 
 void UCharacterInventoryComponent::RemoveInventoryItem(FInventorySlot* Slot, int32 Amount)
 {
-	if (Slot)
+	if (Slot && Slot->Item.IsValid())
 	{
-		const TWeakObjectPtr<UInventoryItem> Item = Slot->Item;
-		if (Item->GetCount() > Amount)
+		if (Slot->Item->GetCount() > Amount)
 		{
-			Item->SetCount(Item->GetCount() - Amount);
+			Slot->Item->SetCount(Slot->Item->GetCount() - Amount);
 		}
 		else
 		{

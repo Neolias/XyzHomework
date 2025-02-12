@@ -13,6 +13,11 @@ AThrowableItem::AThrowableItem()
 	StaticMesh->SetupAttachment(RootComponent);
 }
 
+EWeaponAmmoType AThrowableItem::GetAmmoType()
+{
+	return AmmoType;
+}
+
 void AThrowableItem::Throw(AXyzProjectile* ThrowableProjectile, const FVector ResetLocation)
 {
 	if (!CachedBaseCharacterOwner.IsValid() || !IsValid(ThrowableProjectile))

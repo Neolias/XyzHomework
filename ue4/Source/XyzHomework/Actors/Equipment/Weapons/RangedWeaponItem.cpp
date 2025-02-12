@@ -104,6 +104,11 @@ void ARangedWeaponItem::SetCurrentWeaponMode(const int32 ModeIndex)
 	}
 }
 
+EWeaponAmmoType ARangedWeaponItem::GetAmmoType()
+{
+	return IsCurrentWeaponModeValid() ? CurrentWeaponMode->AmmoType : EWeaponAmmoType::None;
+}
+
 void ARangedWeaponItem::Server_SetCurrentWeaponMode_Implementation(const int32 ModeIndex)
 {
 	SetCurrentWeaponMode(ModeIndex);

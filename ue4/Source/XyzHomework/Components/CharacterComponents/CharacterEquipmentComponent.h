@@ -54,8 +54,6 @@ public:
 	void EquipFromDefaultItemSlot(const bool bShouldSkipAnimation = true);
 	void DrawNextItem();
 	void DrawPreviousItem();
-	bool AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, int32 EquipmentSlotIndex = -1);
-	TWeakObjectPtr<UInventoryItem> RemoveEquipmentItem(int32 EquipmentSlotIndex);
 	UFUNCTION(BlueprintCallable, Category = "Character Equipment Component")
 	bool EquipItemBySlotType(EEquipmentItemSlot EquipmentItemSlot, bool bShouldSkipAnimation = true);
 	void UnequipCurrentItem();
@@ -68,14 +66,17 @@ public:
 	void EquipPrimaryItem(const bool bForceEquip = false);
 	UFUNCTION()
 	void UnequipPrimaryItem(const bool bForceUnequip = false);
-	bool CanThrowItem(const AThrowableItem* ThrowableItem);
+	bool CanThrowItem(AThrowableItem* ThrowableItem);
 	void ThrowItem();
 
-	void CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
-	void InitializeInventoryItem(AEquipmentItem* EquipmentItem);
+	// Equipment widgets
+
+	bool AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, int32 Amount = 1, int32 EquipmentSlotIndex = -1);
+	bool RemoveEquipmentItem(int32 EquipmentSlotIndex);
 	void OpenViewEquipment(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
 	void CloseViewEquipment();
 	bool IsViewEquipmentVisible() const;
+	void OnEquipmentSlotUpdated(int32 SlotIndex);
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Equipment | Loadout")
@@ -132,7 +133,7 @@ protected:
 	virtual void BeginPlay() override;
 	void InstantiateProjectilePools(AActor* Owner);
 	UFUNCTION()
-	void OnCurrentWeaponAmmoChanged(int32 AmmoAmount = 0.f);
+	void OnCurrentWeaponAmmoChanged(int32 NewAmmo);
 	UFUNCTION()
 	void OnCurrentWeaponReloaded();
 	UFUNCTION()
@@ -141,9 +142,9 @@ protected:
 	void OnThrowItemEnd();
 	UFUNCTION()
 	void OnThrowItemAnimationFinished();
-	void OnCurrentThrowableAmmoChanged(int32 NewAmmo) const;
+	void OnCurrentThrowableAmmoChanged(int32 NewAmmo0) const;
 	void CreateLoadout();
-	void LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh);
+	void LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh, int32 CountInSlot = 1);
 	bool IncrementCurrentSlotIndex();
 	bool DecrementCurrentSlotIndex();
 
@@ -160,5 +161,11 @@ protected:
 	void Server_OnThrowItem(AXyzProjectile* ThrowableProjectile, const FVector ResetLocation);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_OnThrowItem(AXyzProjectile* ThrowableProjectile, const FVector ResetLocation);
-	bool TryIncreaseItemAmmo(AEquipmentItem* Item);
+
+	// Equipment Widgets
+
+	void SetInventoryDataTable(UDataTable* InventoryItemDataTable);
+	void CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
+	void InitializeInventoryItem(AEquipmentItem* EquipmentItem, int32 Count = 1) const;
+	EEquipmentItemSlot FindCompatibleSlot(AEquipmentItem* EquipmentItem);
 };
