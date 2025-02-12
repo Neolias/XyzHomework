@@ -1126,9 +1126,9 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 	}
 }
 
-void AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
+bool AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
 {
-	CharacterInventoryComponent->AddInventoryItem(ItemType, Amount, InventoryItemDataTable);;
+	return CharacterInventoryComponent->AddInventoryItem(ItemType, Amount, InventoryItemDataTable);
 }
 
 void AXyzBaseCharacter::LineTraceInteractableObject()

@@ -21,9 +21,8 @@ FName APickupItem::GetActionName()
 void APickupItem::Interact(APawn* InteractingPawn)
 {
 	AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(InteractingPawn);
-	if (IsValid(BaseCharacter))
+	if (IsValid(BaseCharacter) && BaseCharacter->PickupItem(ItemType, Amount))
 	{
-		BaseCharacter->PickupItem(ItemType, Amount);
+		Destroy();
 	}
-	Destroy();
 }

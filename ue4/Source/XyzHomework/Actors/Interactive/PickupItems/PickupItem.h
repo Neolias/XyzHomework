@@ -16,7 +16,7 @@ class XYZHOMEWORK_API APickupItem : public AActor, public IInteractable
 public:
 	APickupItem();
 	virtual FName GetActionName() override;
-	EInventoryItemType GetItemType() const { return ItemType; }
+	virtual EInventoryItemType GetItemType() const { return ItemType; }
 	virtual void Interact(APawn* InteractingPawn) override;
 
 protected:

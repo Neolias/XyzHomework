@@ -159,9 +159,9 @@ public:
 
 	// Inventory
 
-	UDataTable* GetInventoryItemDataTable() const { return InventoryItemDataTable; }
-	void UseInventory(APlayerController* PlayerController);
-	void PickupItem(EInventoryItemType ItemType, int32 Amount);
+	virtual UDataTable* GetInventoryItemDataTable() const { return InventoryItemDataTable; }
+	virtual void UseInventory(APlayerController* PlayerController);
+	virtual bool PickupItem(EInventoryItemType ItemType, int32 Amount);
 
 	// Wall Running
 
