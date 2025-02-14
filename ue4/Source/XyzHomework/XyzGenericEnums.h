@@ -90,9 +90,9 @@ enum class EWeaponAmmoType : uint8
 	Pistol,
 	Rifle,
 	Shotgun,
-	SniperRifle,
+	SniperRifle UMETA(DisplayName = "SniperRifle"),
 	Grenade,
-	RifleGrenade,
+	RifleGrenade UMETA(DisplayName = "RifleGrenade"),
 	Max UMETA(Hidden)
 };
 
@@ -168,5 +168,9 @@ enum class EInventoryItemType : uint8
 	SniperRifle UMETA(DisplayName = "SniperRifle"),
 	Knife,
 	Grenade,
+	PistolAmmo UMETA(DisplayName = "PistolAmmo"),
+	RifleAmmo UMETA(DisplayName = "RifleAmmo"),
+	ShotgunAmmo UMETA(DisplayName = "ShotgunAmmo"),
+	SniperRifleAmmo UMETA(DisplayName = "SniperRifleAmmo"),
 	Max UMETA(Hidden)
 };

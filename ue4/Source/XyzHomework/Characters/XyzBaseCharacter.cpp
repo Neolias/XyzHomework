@@ -1135,6 +1135,16 @@ bool AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
 	return CharacterInventoryComponent->AddInventoryItem(ItemType, Amount);
 }
 
+bool AXyzBaseCharacter::AddAmmoToInventory(EWeaponAmmoType AmmoType, int32 Amount)
+{
+	return CharacterInventoryComponent->AddAmmoItem(AmmoType, Amount);
+}
+
+int32 AXyzBaseCharacter::RemoveAmmoFromInventory(EWeaponAmmoType AmmoType, int32 Amount)
+{
+	return CharacterInventoryComponent->RemoveAmmoItem(AmmoType, Amount);
+}
+
 void AXyzBaseCharacter::LineTraceInteractableObject()
 {
 	if (!IsPlayerControlled() || !XyzPlayerController.IsValid())

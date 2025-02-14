@@ -162,6 +162,8 @@ public:
 	virtual TSoftObjectPtr<UDataTable> GetInventoryItemDataTable() const { return InventoryItemDataTable; }
 	virtual void UseInventory(APlayerController* PlayerController);
 	virtual bool PickupItem(EInventoryItemType ItemType, int32 Amount);
+	virtual bool AddAmmoToInventory(EWeaponAmmoType AmmoType, int32 Amount);
+	virtual int32 RemoveAmmoFromInventory(EWeaponAmmoType AmmoType, int32 Amount);
 
 	// Wall Running
 

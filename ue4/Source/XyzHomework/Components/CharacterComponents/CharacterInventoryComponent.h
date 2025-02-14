@@ -49,6 +49,8 @@ public:
 	int32 RemoveInventoryItem(EInventoryItemType ItemType, int32 Amount);
 	int32 RemoveInventoryItem(int32 SlotIndex, int32 Amount);
 	int32 RemoveInventoryItem(FInventorySlot* Slot, int32 Amount);
+	bool AddAmmoItem(EWeaponAmmoType AmmoType, int32 Amount);
+	int32 RemoveAmmoItem(EWeaponAmmoType AmmoType, int32 Amount);
 
 protected:
 	virtual void BeginPlay() override;

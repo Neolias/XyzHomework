@@ -818,24 +818,30 @@ void UCharacterEquipmentComponent::SetAmmo(EWeaponAmmoType AmmoType, int32 NewAm
 
 bool UCharacterEquipmentComponent::AddAmmo(EWeaponAmmoType AmmoType, int32 Amount)
 {
-	if (Amount < 1 || AmmoType == EWeaponAmmoType::None)
+	if (Amount < 1 || AmmoType == EWeaponAmmoType::None || !IsValid(BaseCharacter))
 	{
 		return false;
 	}
 
-	EquipmentAmmoArray[(uint32)AmmoType] += Amount;
-	return true;
+	if (BaseCharacter->AddAmmoToInventory(AmmoType, Amount))
+	{
+		EquipmentAmmoArray[(uint32)AmmoType] += Amount;
+		return true;
+	}
+
+	return false;
 }
 
 int32 UCharacterEquipmentComponent::RemoveAmmo(EWeaponAmmoType AmmoType, int32 Amount)
 {
-	if (Amount < 1 || AmmoType == EWeaponAmmoType::None)
+	if (Amount < 1 || AmmoType == EWeaponAmmoType::None || !IsValid(BaseCharacter))
 	{
 		return 0;
 	}
 
 	const uint32 AmmoIndex = (uint32)AmmoType;
-	const int32 AmmoToRemove = Amount < (int32)EquipmentAmmoArray[AmmoIndex] ? Amount : EquipmentAmmoArray[AmmoIndex];
+	int32 AmmoToRemove = Amount < (int32)EquipmentAmmoArray[AmmoIndex] ? Amount : EquipmentAmmoArray[AmmoIndex];
+	AmmoToRemove = BaseCharacter->RemoveAmmoFromInventory(AmmoType, AmmoToRemove);
 	EquipmentAmmoArray[AmmoIndex] -= AmmoToRemove;
 
 	return AmmoToRemove;

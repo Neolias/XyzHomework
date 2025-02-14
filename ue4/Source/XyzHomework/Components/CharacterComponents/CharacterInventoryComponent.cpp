@@ -258,3 +258,45 @@ int32 UCharacterInventoryComponent::RemoveInventoryItem(FInventorySlot* Slot, in
 	Slot->UpdateSlotState();
 	return Result;
 }
+
+bool UCharacterInventoryComponent::AddAmmoItem(EWeaponAmmoType AmmoType, int32 Amount)
+{
+	if (Amount < 1)
+	{
+		return true;
+	}
+
+	const UDataTable* DataTable = LoadObject<UDataTable>(nullptr, *InventoryItemDataTable.GetUniqueID().GetAssetPathString());
+	if (IsValid(DataTable))
+	{
+		FString RowID = UEnum::GetDisplayValueAsText<EWeaponAmmoType>(AmmoType).ToString() + FString("Ammo");
+		const FInventoryTableRow* ItemData = DataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
+		if (ItemData)
+		{
+			return AddInventoryItem(ItemData->InventoryItemDescription.InventoryItemType, Amount);
+		}
+	}
+
+	return true; // If ammo data is not found, returns true to let the equipment component fill EquipmentAmmoArray
+}
+
+int32 UCharacterInventoryComponent::RemoveAmmoItem(EWeaponAmmoType AmmoType, int32 Amount)
+{
+	if (Amount < 1)
+	{
+		return 0;
+	}
+
+	const UDataTable* DataTable = LoadObject<UDataTable>(nullptr, *InventoryItemDataTable.GetUniqueID().GetAssetPathString());
+	if (IsValid(DataTable))
+	{
+		FString RowID = UEnum::GetDisplayValueAsText<EWeaponAmmoType>(AmmoType).ToString() + FString("Ammo");
+		const FInventoryTableRow* ItemData = DataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
+		if (ItemData)
+		{
+			return RemoveInventoryItem(ItemData->InventoryItemDescription.InventoryItemType, Amount);
+		}
+	}
+
+	return 0;
+}
