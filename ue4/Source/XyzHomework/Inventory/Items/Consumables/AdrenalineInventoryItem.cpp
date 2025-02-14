@@ -15,9 +15,12 @@ bool UAdrenalineInventoryItem::Consume(APawn* Pawn)
 	if (IsValid(BaseCharacter))
 	{
 		UCharacterAttributesComponent* AttributesComponent = BaseCharacter->GetCharacterAttributesComponent();
-		AttributesComponent->SetCurrentStamina(AttributesComponent->GetMaxStamina());
-		BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(Description.InventoryItemType, 1);
-		return true;
+
+		if (BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(Description.InventoryItemType, 1))
+		{
+			AttributesComponent->SetCurrentStamina(AttributesComponent->GetMaxStamina());
+			return true;
+		}
 	}
 
 	return false;

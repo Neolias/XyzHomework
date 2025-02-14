@@ -835,14 +835,10 @@ int32 UCharacterEquipmentComponent::RemoveAmmo(EWeaponAmmoType AmmoType, int32 A
 	}
 
 	const uint32 AmmoIndex = (uint32)AmmoType;
-	const int32 AmmoDelta = Amount < (int32)EquipmentAmmoArray[AmmoIndex] ? Amount : EquipmentAmmoArray[AmmoIndex];
+	const int32 AmmoToRemove = Amount < (int32)EquipmentAmmoArray[AmmoIndex] ? Amount : EquipmentAmmoArray[AmmoIndex];
+	EquipmentAmmoArray[AmmoIndex] -= AmmoToRemove;
 
-	if (AmmoDelta > 0)
-	{
-		EquipmentAmmoArray[AmmoIndex] -= AmmoDelta;
-	}
-
-	return AmmoDelta;
+	return AmmoToRemove;
 }
 
 void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerController)
@@ -1058,8 +1054,9 @@ void UCharacterEquipmentComponent::OnCurrentWeaponReloaded()
 {
 	if (CurrentRangedWeapon.IsValid() && IsValid(BaseCharacter) && BaseCharacter->GetLocalRole() == ROLE_Authority)
 	{
-		const int32 ReloadedAmmo = GetAvailableAmmoForWeaponMagazine(CurrentRangedWeapon.Get());
-		if (RemoveAmmo(CurrentRangedWeapon->GetAmmoType(), ReloadedAmmo))
+		int32 ReloadedAmmo = GetAvailableAmmoForWeaponMagazine(CurrentRangedWeapon.Get());
+		ReloadedAmmo = RemoveAmmo(CurrentRangedWeapon->GetAmmoType(), ReloadedAmmo);
+		if (ReloadedAmmo)
 		{
 			CurrentRangedWeapon->SetCurrentAmmo(CurrentRangedWeapon->GetCurrentAmmo() + ReloadedAmmo);
 		}

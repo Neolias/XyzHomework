@@ -14,9 +14,11 @@ bool UHealthPackInventoryItem::Consume(APawn* Pawn)
 	const AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(Pawn);
 	if (IsValid(BaseCharacter))
 	{
-		BaseCharacter->GetCharacterAttributesComponent()->AddHealth(HealthRestoreAmount);
-		BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(Description.InventoryItemType, 1);
-		return true;
+		if (BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(Description.InventoryItemType, 1))
+		{
+			BaseCharacter->GetCharacterAttributesComponent()->AddHealth(HealthRestoreAmount);
+			return true;
+		}
 	}
 
 	return false;

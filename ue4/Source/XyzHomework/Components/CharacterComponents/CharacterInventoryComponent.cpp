@@ -189,67 +189,72 @@ bool UCharacterInventoryComponent::FillEmptySlots(EInventoryItemType ItemType, i
 	return Remainder == 0;
 }
 
-void UCharacterInventoryComponent::RemoveInventoryItem(EInventoryItemType ItemType, int32 Amount)
+int32 UCharacterInventoryComponent::RemoveInventoryItem(EInventoryItemType ItemType, int32 Amount)
 {
 	if (Amount < 1)
 	{
-		return;
+		return 0;
 	}
 
 	TArray<FInventorySlot*> CompatibleItemSlots;
 	for (FInventorySlot& Slot : ItemSlots)
 	{
-		if (Slot.Item.IsValid() && Slot.Item->GetInventoryItemType() == ItemType && Slot.Item->CanStackItems())
-		{
-			CompatibleItemSlots.Add(&Slot);
-		}
+		if (Slot.Item.IsValid() && Slot.Item->GetInventoryItemType() == ItemType)
+
+			if (Slot.Item.IsValid() && Slot.Item->GetInventoryItemType() == ItemType && Slot.Item->CanStackItems())
+			{
+				CompatibleItemSlots.Add(&Slot);
+			}
 	}
 	CompatibleItemSlots.Sort([=](const FInventorySlot& SlotA, const FInventorySlot& SlotB) { return SlotA.Item->GetCount() < SlotB.Item->GetCount(); });
 
 	int32 Remainder = Amount;
 	for (FInventorySlot* Slot : CompatibleItemSlots)
 	{
-		if (Slot->Item.IsValid() && Slot->Item->GetInventoryItemType() == ItemType && Slot->Item->GetAvailableSpaceInStack() > 0)
+		Remainder -= RemoveInventoryItem(Slot, Remainder);
+		if (Remainder < 1)
 		{
-			const int32 RemovedAmount = Slot->Item->GetCount();
-			RemoveInventoryItem(Slot, RemovedAmount);
-			Remainder -= RemovedAmount;
-
-			if (Remainder < 0)
-			{
-				break;
-			}
+			break;
 		}
 	}
+
+	return FMath::Clamp(Amount - Remainder, 0, Amount);
 }
 
-void UCharacterInventoryComponent::RemoveInventoryItem(int32 SlotIndex, int32 Amount)
+int32 UCharacterInventoryComponent::RemoveInventoryItem(int32 SlotIndex, int32 Amount)
 {
 	if (SlotIndex >= 0 && SlotIndex < ItemSlots.Num())
 	{
-		RemoveInventoryItem(&ItemSlots[SlotIndex], Amount);
+		return RemoveInventoryItem(&ItemSlots[SlotIndex], Amount);
 	}
+
+	return 0;
 }
 
-void UCharacterInventoryComponent::RemoveInventoryItem(FInventorySlot* Slot, int32 Amount)
+int32 UCharacterInventoryComponent::RemoveInventoryItem(FInventorySlot* Slot, int32 Amount)
 {
 	if (!Slot)
 	{
-		return;
+		return 0;
 	}
 
+	int32 Result = 0;
 	if (Slot->Item.IsValid())
 	{
-		if (Slot->Item->GetCount() > Amount)
+		const int32 ItemCount = Slot->Item->GetCount();
+		if (ItemCount > Amount)
 		{
-			Slot->Item->SetCount(Slot->Item->GetCount() - Amount);
+			Slot->Item->SetCount(ItemCount - Amount);
+			Result = Amount;
 		}
 		else
 		{
 			Slot->ClearSlot();
 			UsedSlotCount--;
+			Result = ItemCount;
 		}
 	}
 
 	Slot->UpdateSlotState();
+	return Result;
 }
