@@ -20,8 +20,8 @@ void UEquipmentSlotWidget::UpdateView()
 {
 	if (LinkedInventoryItem.IsValid())
 	{
-		ItemIcon->SetBrushFromTexture(LinkedInventoryItem->GetDescription().Icon);
-		ItemName->SetText(LinkedInventoryItem->GetDescription().Name);
+		ItemIcon->SetBrushFromTexture(LinkedInventoryItem->GetItemDescription().Icon);
+		ItemName->SetText(LinkedInventoryItem->GetItemDescription().Name);
 	}
 	else
 	{
@@ -77,7 +77,7 @@ void UEquipmentSlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, con
 
 	/* Some simplification for not define new widget for drag and drop operation  */
 	UInventorySlotWidget* DragWidget = CreateWidget<UInventorySlotWidget>(GetOwningPlayer(), DragAndDropWidgetClass);
-	DragWidget->UpdateView(LinkedInventoryItem);
+	DragWidget->UpdateItemIconAndCount(LinkedInventoryItem);
 
 	DragOperation->DefaultDragVisual = DragWidget;
 	DragOperation->Pivot = EDragPivot::CenterCenter;
@@ -101,7 +101,7 @@ bool UEquipmentSlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDrag
 		return SetLinkedSlotItem(PayloadItem);
 	}
 
-	const bool bCanStackItems = LinkedInventoryItem->GetItemType() == PayloadItem->GetItemType() && LinkedInventoryItem->GetAvailableSpaceInStack() > 0;
+	const bool bCanStackItems = LinkedInventoryItem->GetInventoryItemType() == PayloadItem->GetInventoryItemType() && LinkedInventoryItem->GetAvailableSpaceInStack() > 0;
 
 	return bCanStackItems ? StackSlotItems(PayloadItem) : SwapSlotItems(PayloadItem);
 }

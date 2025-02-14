@@ -20,13 +20,17 @@ struct FInventoryItemDescription : public FTableRowBase
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Name;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Icon;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EInventoryItemType InventoryItemType = EInventoryItemType::None;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<AEquipmentItem> EquipmentItemClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bCanStackItems = false;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bCanStackItems"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bCanStackItems"))
 	int32 MaxCount = 1;
 };
 
@@ -36,11 +40,9 @@ struct FInventoryTableRow : public FTableRowBase
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<AEquipmentItem> EquipmentItemClass;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UInventoryItem> InventoryItemClass;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FInventoryItemDescription InventoryItemDescription;
 };
 
@@ -50,15 +52,15 @@ class XYZHOMEWORK_API UInventoryItem : public UObject
 	GENERATED_BODY()
 
 public:
-	virtual void Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In = nullptr);
-	virtual bool IsEquipment() const { return bIsEquipment; }
+	virtual void InitializeItem(const FInventoryItemDescription& InventoryItemDescription);
+	virtual const FInventoryItemDescription& GetItemDescription() const { return Description; }
+	virtual EInventoryItemType GetInventoryItemType() const { return Description.InventoryItemType; }
+	virtual TSubclassOf<AEquipmentItem> GetEquipmentItemClass() const { return Description.EquipmentItemClass; }
 	virtual bool CanStackItems() const { return Description.bCanStackItems; }
-	virtual EInventoryItemType GetItemType() const { return ItemType; }
-	virtual TSubclassOf<AEquipmentItem> GetEquipmentItemClass() const { return EquipmentItemClass; }
-	virtual const FInventoryItemDescription& GetDescription() const { return Description; }
+	virtual int32 GetMaxCount() const { return Description.MaxCount; }
+	virtual bool IsEquipment() const { return bIsEquipment; }
 	virtual int32 GetCount() const { return Count; }
 	virtual void SetCount(const int32 NewCount);
-	virtual int32 GetMaxCount() const { return Description.MaxCount; }
 	virtual int32 AddCount(int32 Value);
 	virtual int32 GetAvailableSpaceInStack() const;
 	virtual UInventorySlotWidget* GetPreviousInventorySlotWidget() const { return PreviousInventorySlotWidget; }
@@ -70,9 +72,7 @@ public:
 	virtual bool RemoveFromEquipment(APawn* Pawn, int32 EquipmentSlotIndex);
 
 protected:
-	EInventoryItemType ItemType = EInventoryItemType::None;
 	FInventoryItemDescription Description;
-	TSubclassOf<AEquipmentItem> EquipmentItemClass;
 	bool bIsEquipment = false;
 	int32 Count = 0;
 	UPROPERTY()

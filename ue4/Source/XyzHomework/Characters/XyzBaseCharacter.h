@@ -159,7 +159,7 @@ public:
 
 	// Inventory
 
-	virtual UDataTable* GetInventoryItemDataTable() const { return InventoryItemDataTable; }
+	virtual TSoftObjectPtr<UDataTable> GetInventoryItemDataTable() const { return InventoryItemDataTable; }
 	virtual void UseInventory(APlayerController* PlayerController);
 	virtual bool PickupItem(EInventoryItemType ItemType, int32 Amount);
 
@@ -221,7 +221,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Interactable Objects", meta = (ClampMin = 1.f, UIMin = 1.f))
 	float InteractableObjectRange = 500.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "XYZ Character | Inventory")
-	UDataTable* InventoryItemDataTable;
+	TSoftObjectPtr<UDataTable> InventoryItemDataTable;
 
 	TWeakObjectPtr<class AXyzPlayerController> XyzPlayerController;
 	UPROPERTY()

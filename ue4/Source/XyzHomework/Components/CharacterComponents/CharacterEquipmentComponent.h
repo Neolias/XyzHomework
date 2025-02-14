@@ -51,6 +51,7 @@ public:
 	bool IsMeleeAttackActive() const { return bIsMeleeAttackActive; }
 	UFUNCTION()
 	void SetIsMeleeAttackActive(const bool bIsMeleeAttackActive_In) { bIsMeleeAttackActive = bIsMeleeAttackActive_In; }
+	void CreateLoadout();
 	void EquipFromDefaultItemSlot(const bool bShouldSkipAnimation = true);
 	void DrawNextItem();
 	void DrawPreviousItem();
@@ -68,12 +69,16 @@ public:
 	void UnequipPrimaryItem(const bool bForceUnequip = false);
 	bool CanThrowItem(AThrowableItem* ThrowableItem);
 	void ThrowItem();
+	void SetAmmo(EWeaponAmmoType AmmoType, int32 NewAmmo);
+	bool AddAmmo(EWeaponAmmoType AmmoType, int32 Amount);
+	int32 RemoveAmmo(EWeaponAmmoType AmmoType, int32 Amount);
 
 	// Equipment widgets
 
+	void SetInventoryItemDataTable(const TSoftObjectPtr<UDataTable>& NewDataTable) { InventoryItemDataTable = NewDataTable; }
 	bool AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, int32 Amount = 1, int32 EquipmentSlotIndex = -1);
 	bool RemoveEquipmentItem(int32 EquipmentSlotIndex);
-	void OpenViewEquipment(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
+	void OpenViewEquipment(APlayerController* PlayerController);
 	void CloseViewEquipment();
 	bool IsViewEquipmentVisible() const;
 	void OnEquipmentSlotUpdated(int32 SlotIndex);
@@ -89,7 +94,7 @@ protected:
 	TArray<EEquipmentItemSlot> WeaponSwitchIgnoredSlots;
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = "Equipment | Loadout")
 	TArray<FProjectilePool> ProjectilePools;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | UI")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | Items")
 	TSubclassOf<UEquipmentViewWidget> EquipmentViewWidgetClass;
 
 	UPROPERTY()
@@ -126,9 +131,8 @@ protected:
 	bool bIsMeleeAttackActive = false;
 
 	UPROPERTY()
-	UDataTable* CachedItemDataTable;
-	UPROPERTY()
 	UEquipmentViewWidget* EquipmentViewWidget;
+	TSoftObjectPtr<UDataTable> InventoryItemDataTable;
 
 	virtual void BeginPlay() override;
 	void InstantiateProjectilePools(AActor* Owner);
@@ -143,8 +147,7 @@ protected:
 	UFUNCTION()
 	void OnThrowItemAnimationFinished();
 	void OnCurrentThrowableAmmoChanged(int32 NewAmmo0) const;
-	void CreateLoadout();
-	void LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh, int32 CountInSlot = 1);
+	void LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh, int32 CountInSlot = -1);
 	bool IncrementCurrentSlotIndex();
 	bool DecrementCurrentSlotIndex();
 
@@ -164,8 +167,7 @@ protected:
 
 	// Equipment Widgets
 
-	void SetInventoryDataTable(UDataTable* InventoryItemDataTable);
-	void CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable);
+	void CreateViewWidget(APlayerController* PlayerController);
 	void InitializeInventoryItem(AEquipmentItem* EquipmentItem, int32 Count = 1) const;
 	EEquipmentItemSlot FindCompatibleSlot(AEquipmentItem* EquipmentItem);
 };

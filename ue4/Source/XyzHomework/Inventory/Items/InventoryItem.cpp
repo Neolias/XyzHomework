@@ -11,12 +11,10 @@
 #include "UI/Widgets/Equipment/EquipmentViewWidget.h"
 #include "UI/Widgets/Inventory/InventorySlotWidget.h"
 
-void UInventoryItem::Initialize(EInventoryItemType ItemType_In, const FInventoryItemDescription& Description_In, TSubclassOf<AEquipmentItem> EquipmentItemClass_In/* = nullptr*/)
+void UInventoryItem::InitializeItem(const FInventoryItemDescription& InventoryItemDescription)
 {
-	ItemType = ItemType_In;
-	Description = Description_In;
-	EquipmentItemClass = EquipmentItemClass_In;
-	bIsEquipment = IsValid(EquipmentItemClass_In);
+	Description = InventoryItemDescription;
+	bIsEquipment = IsValid(Description.EquipmentItemClass);
 }
 
 void UInventoryItem::SetCount(const int32 NewCount)
@@ -50,7 +48,7 @@ void UInventoryItem::SetPreviousEquipmentSlotWidget(UEquipmentSlotWidget* SlotWi
 
 bool UInventoryItem::AddToEquipment(APawn* Pawn)
 {
-	if (!IsEquipment() || !IsValid(EquipmentItemClass))
+	if (!IsEquipment() || !IsValid(Description.EquipmentItemClass))
 	{
 		return false;
 	}
@@ -58,7 +56,7 @@ bool UInventoryItem::AddToEquipment(APawn* Pawn)
 	const AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(Pawn);
 	if (IsValid(BaseCharacter))
 	{
-		if (BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(EquipmentItemClass, Count))
+		if (BaseCharacter->GetCharacterEquipmentComponent()->AddEquipmentItem(Description.EquipmentItemClass, Count))
 		{
 			if (IsValid(PreviousInventorySlotWidget))
 			{
@@ -66,7 +64,7 @@ bool UInventoryItem::AddToEquipment(APawn* Pawn)
 			}
 			else
 			{
-				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, Count);
+				BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(Description.InventoryItemType, Count);
 			}
 
 			return true;
@@ -81,14 +79,14 @@ bool UInventoryItem::RemoveFromEquipment(APawn* Pawn, int32 EquipmentSlotIndex)
 	const AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(Pawn);
 	if (IsValid(BaseCharacter))
 	{
-		if (BaseCharacter->GetCharacterInventoryComponent()->AddInventoryItem(ItemType, Count, BaseCharacter->GetInventoryItemDataTable()))
+		if (BaseCharacter->GetCharacterInventoryComponent()->AddInventoryItem(Description.InventoryItemType, Count))
 		{
 			if (BaseCharacter->GetCharacterEquipmentComponent()->RemoveEquipmentItem(EquipmentSlotIndex))
 			{
 				return true;
 			}
 
-			BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, Count);
+			BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(Description.InventoryItemType, Count);
 		}
 	}
 

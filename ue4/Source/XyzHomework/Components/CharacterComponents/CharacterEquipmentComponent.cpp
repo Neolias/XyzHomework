@@ -36,14 +36,12 @@ void UCharacterEquipmentComponent::GetLifetimeReplicatedProps(TArray<FLifetimePr
 void UCharacterEquipmentComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	checkf(GetOwner()->IsA<AXyzBaseCharacter>(), TEXT("UCharacterEquipmentComponent::CreateLoadout() should be used only with AXyzBaseCharacter"))
+	checkf(GetOwner()->IsA<AXyzBaseCharacter>(), TEXT("The component owner can be only AXyzBaseCharacter"))
 		BaseCharacter = StaticCast<AXyzBaseCharacter*>(GetOwner());
 
 	if (BaseCharacter->GetRemoteRole() != ROLE_Authority)
 	{
 		InstantiateProjectilePools(BaseCharacter);
-		CreateLoadout();
-		EquipFromDefaultItemSlot();
 	}
 	if (BaseCharacter->IsLocallyControlled())
 	{
@@ -138,8 +136,12 @@ void UCharacterEquipmentComponent::LoadWeaponMagazineByBullet(ARangedWeaponItem*
 		}
 		AmmoToLoad += AvailableAmmo;
 	}
-	EquipmentAmmoArray[(uint32)RangedWeaponItem->GetAmmoType()] -= AmmoToLoad;
-	RangedWeaponItem->SetCurrentAmmo(AmmoToLoad);
+
+	AmmoToLoad = RemoveAmmo(RangedWeaponItem->GetAmmoType(), AmmoToLoad);
+	if (AmmoToLoad)
+	{
+		RangedWeaponItem->SetCurrentAmmo(AmmoToLoad);
+	}
 }
 
 void UCharacterEquipmentComponent::OnRep_EquipmentAmmoArray()
@@ -179,12 +181,10 @@ void UCharacterEquipmentComponent::UpdateAmmoHUDWidgets()
 
 void UCharacterEquipmentComponent::CreateLoadout()
 {
-	if (!IsValid(BaseCharacter))
+	if (!IsValid(BaseCharacter) || BaseCharacter->GetRemoteRole() == ROLE_Authority)
 	{
 		return;
 	}
-
-	SetInventoryDataTable(BaseCharacter->GetInventoryItemDataTable());
 
 	USkeletalMeshComponent* SkeletalMesh = BaseCharacter->GetMesh();
 	if (!IsValid(SkeletalMesh))
@@ -194,7 +194,7 @@ void UCharacterEquipmentComponent::CreateLoadout()
 
 	for (const TPair<EWeaponAmmoType, int32>& AmmoPair : MaxEquippedWeaponAmmo)
 	{
-		EquipmentAmmoArray[(uint32)AmmoPair.Key] = AmmoPair.Value;
+		AddAmmo(AmmoPair.Key, AmmoPair.Value);
 	}
 
 	for (const TPair<EEquipmentItemSlot, TSubclassOf<AEquipmentItem>>& SlotPair : EquipmentSlots)
@@ -207,12 +207,13 @@ void UCharacterEquipmentComponent::CreateLoadout()
 		LoadoutOneItem(SlotPair.Key, SlotPair.Value, SkeletalMesh);
 	}
 
+	EquipFromDefaultItemSlot();
 	UpdateAmmoHUDWidgets();
 }
 
-void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh, int32 CountInSlot/* = 1*/)
+void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh, int32 CountInSlot/* = -1*/)
 {
-	if (CountInSlot < 1)
+	if (CountInSlot == 0 || CountInSlot < -1)
 	{
 		return;
 	}
@@ -227,14 +228,19 @@ void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSl
 	if (InventoryItem.IsValid() && InventoryItem->CanStackItems())
 	{
 		// Only applies to equipment items that serve as ammo units, e.g. grenades
-		// Updating the count in an equipment slot with CountInSlot and filling the remaining space using ammo from EquipmentAmmoArray
-		// Finally overriding the EquipmentAmmoArray value with the resulting item Count in slot
-		// (TODO: fix later to store the remainder in the inventory as ammo items)
+		// Filling the slot using ammo from EquipmentAmmoArray
+		// Adding the remaining ammo to the inventory as items
 
-		InventoryItem->SetCount(CountInSlot);
-		const uint32 AmmoIndex = (uint32)EquipmentItem->GetAmmoType();
-		InventoryItem->AddCount(EquipmentAmmoArray[AmmoIndex]);
-		//EquipmentAmmoArray[AmmoIndex] = InventoryItem->GetCount();
+		if (CountInSlot != -1) // -1 indicates loadout on BeginPlay
+		{
+			AddAmmo(EquipmentItem->GetAmmoType(), CountInSlot);
+		}
+
+		InventoryItem->SetCount(0);
+		int32 AmmoToLoad = EquipmentAmmoArray[(uint32)EquipmentItem->GetAmmoType()];
+		AmmoToLoad -= InventoryItem->AddCount(AmmoToLoad);
+		SetAmmo(EquipmentItem->GetAmmoType(), InventoryItem->GetCount());
+		BaseCharacter->PickupItem(InventoryItem->GetInventoryItemType(), AmmoToLoad);
 	}
 	else
 	{
@@ -253,9 +259,12 @@ void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSl
 				}
 				else
 				{
-					const int32 AmmoToLoad = GetAvailableAmmoForWeaponMagazine(RangedWeaponItem);
-					EquipmentAmmoArray[(int32)RangedWeaponItem->GetAmmoType()] -= AmmoToLoad;
-					RangedWeaponItem->SetCurrentAmmo(AmmoToLoad);
+					int32 AmmoToLoad = GetAvailableAmmoForWeaponMagazine(RangedWeaponItem);
+					AmmoToLoad = RemoveAmmo(RangedWeaponItem->GetAmmoType(), AmmoToLoad);
+					if (AmmoToLoad)
+					{
+						RangedWeaponItem->SetCurrentAmmo(AmmoToLoad);
+					}
 				}
 			}
 			RangedWeaponItem->SetCurrentWeaponMode(RangedWeaponItem->GetDefaultWeaponModeIndex());
@@ -273,12 +282,10 @@ void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSl
 
 bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> EquipmentItemClass, int32 Amount/* = 1*/, int32 EquipmentSlotIndex/* = -1*/)
 {
-	if (Amount < 1 || EquipmentSlotIndex == 0 || EquipmentSlotIndex < -1 || !IsValid(BaseCharacter))
+	if (Amount < 1 || EquipmentSlotIndex == 0 || EquipmentSlotIndex < -1 || !IsValid(EquipmentItemClass) || !IsValid(BaseCharacter))
 	{
 		return false;
 	}
-
-	SetInventoryDataTable(BaseCharacter->GetInventoryItemDataTable());
 
 	AEquipmentItem* DefaultItem = Cast<AEquipmentItem>(EquipmentItemClass->GetDefaultObject());
 	if (!IsValid(DefaultItem))
@@ -311,11 +318,14 @@ bool UCharacterEquipmentComponent::AddEquipmentItem(TSubclassOf<AEquipmentItem> 
 		{
 			if (InventoryItem->CanStackItems() && InventoryItem->GetAvailableSpaceInStack() > 0)
 			{
+				const int32 PreviousCount = InventoryItem->GetCount();
 				const int32 Remainder = Amount - InventoryItem->AddCount(Amount);
-				if (Remainder)
+				if (Remainder && !BaseCharacter->PickupItem(InventoryItem->GetInventoryItemType(), Remainder))
 				{
-					BaseCharacter->PickupItem(EquippedItem->GetInventoryItemType(), Remainder);
+					InventoryItem->SetCount(PreviousCount);
+					return false;
 				}
+				SetAmmo(EquippedItem->GetAmmoType(), InventoryItem->GetCount());
 
 				if (IsValid(EquipmentViewWidget))
 				{
@@ -383,16 +393,6 @@ EEquipmentItemSlot UCharacterEquipmentComponent::FindCompatibleSlot(AEquipmentIt
 
 void UCharacterEquipmentComponent::OnEquipmentSlotUpdated(int32 SlotIndex)
 {
-	AEquipmentItem* EquippedItem = EquippedItemsArray[SlotIndex];
-	if (IsValid(EquippedItem))
-	{
-		auto InventoryItem = EquippedItem->GetLinkedInventoryItem();
-		if (InventoryItem.IsValid() && InventoryItem->CanStackItems())
-		{
-			EquipmentAmmoArray[(uint32)EquippedItem->GetAmmoType()] = InventoryItem->GetCount();
-		}
-	}
-
 	UpdateAmmoHUDWidgets();
 }
 
@@ -411,23 +411,22 @@ bool UCharacterEquipmentComponent::RemoveEquipmentItem(int32 EquipmentSlotIndex)
 			UnequipCurrentItem();
 		}
 
-		ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(EquipmentItem);
-		if (IsValid(RangedWeapon))
-		{
-			const int32 CurrentWeaponAmmo = RangedWeapon->GetCurrentAmmo();
-			EquipmentAmmoArray[(uint32)RangedWeapon->GetAmmoType()] += CurrentWeaponAmmo;
-		}
-
 		auto InventoryItem = EquipmentItem->GetLinkedInventoryItem();
 		if (InventoryItem.IsValid() && InventoryItem->CanStackItems())
 		{
 			// Only applies to equipment items that serve as ammo units, e.g. grenades
-			// Before removing the equipment item, set the linked inventory item Count equal to the current ammo value 
-			// Removing the item clears the value in EquipmentAmmoArray
 
-			const uint32 AmmoIndex = (uint32)EquipmentItem->GetAmmoType();
-			InventoryItem->SetCount(EquipmentAmmoArray[AmmoIndex]);
-			EquipmentAmmoArray[AmmoIndex] = 0;
+			SetAmmo(EquipmentItem->GetAmmoType(), 0);
+		}
+
+		ARangedWeaponItem* RangedWeapon = Cast<ARangedWeaponItem>(EquipmentItem);
+		if (IsValid(RangedWeapon))
+		{
+			if (!AddAmmo(RangedWeapon->GetAmmoType(), RangedWeapon->GetCurrentAmmo()))
+			{
+				EquipPreviousItemIfUnequipped(false);
+				return false;
+			}
 		}
 
 		EquipmentItem->Destroy();
@@ -809,18 +808,45 @@ void UCharacterEquipmentComponent::ThrowItem()
 	}
 }
 
-void UCharacterEquipmentComponent::SetInventoryDataTable(UDataTable* InventoryItemDataTable)
+void UCharacterEquipmentComponent::SetAmmo(EWeaponAmmoType AmmoType, int32 NewAmmo)
 {
-	if (CachedItemDataTable != InventoryItemDataTable)
+	if (NewAmmo >= 0)
 	{
-		CachedItemDataTable = InventoryItemDataTable;
+		EquipmentAmmoArray[(uint32)AmmoType] = NewAmmo;
 	}
 }
 
-void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
+bool UCharacterEquipmentComponent::AddAmmo(EWeaponAmmoType AmmoType, int32 Amount)
 {
-	SetInventoryDataTable(InventoryItemDataTable);
+	if (Amount < 1 || AmmoType == EWeaponAmmoType::None)
+	{
+		return false;
+	}
 
+	EquipmentAmmoArray[(uint32)AmmoType] += Amount;
+	return true;
+}
+
+int32 UCharacterEquipmentComponent::RemoveAmmo(EWeaponAmmoType AmmoType, int32 Amount)
+{
+	if (Amount < 1 || AmmoType == EWeaponAmmoType::None)
+	{
+		return 0;
+	}
+
+	const uint32 AmmoIndex = (uint32)AmmoType;
+	const int32 AmmoDelta = Amount < (int32)EquipmentAmmoArray[AmmoIndex] ? Amount : EquipmentAmmoArray[AmmoIndex];
+
+	if (AmmoDelta > 0)
+	{
+		EquipmentAmmoArray[AmmoIndex] -= AmmoDelta;
+	}
+
+	return AmmoDelta;
+}
+
+void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerController)
+{
 	if (IsValid(EquipmentViewWidget))
 	{
 		return;
@@ -837,29 +863,27 @@ void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerCon
 
 void UCharacterEquipmentComponent::InitializeInventoryItem(AEquipmentItem* EquipmentItem, int32 Count/* = 1*/) const
 {
-	if (IsValid(CachedItemDataTable))
+	const UDataTable* DataTable = LoadObject<UDataTable>(nullptr, *InventoryItemDataTable.GetUniqueID().GetAssetPathString());
+	if (IsValid(DataTable))
 	{
-		const EInventoryItemType ItemType = EquipmentItem->GetInventoryItemType();
-		FString RowID = UEnum::GetDisplayValueAsText<EInventoryItemType>(ItemType).ToString();
-		const FInventoryTableRow* ItemData = CachedItemDataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
+		FString RowID = UEnum::GetDisplayValueAsText<EEquipmentItemType>(EquipmentItem->GetEquipmentItemType()).ToString();
+		const FInventoryTableRow* ItemData = DataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
 
 		if (ItemData)
 		{
 			const TWeakObjectPtr<UInventoryItem> NewItem = NewObject<UInventoryItem>(GetOwner(), ItemData->InventoryItemClass);
-			NewItem->Initialize(ItemType, ItemData->InventoryItemDescription, ItemData->EquipmentItemClass);
+			NewItem->InitializeItem(ItemData->InventoryItemDescription);
 			EquipmentItem->SetLinkedInventoryItem(NewItem);
 			NewItem->SetCount(Count);
 		}
 	}
 }
 
-void UCharacterEquipmentComponent::OpenViewEquipment(APlayerController* PlayerController, UDataTable* InventoryItemDataTable)
+void UCharacterEquipmentComponent::OpenViewEquipment(APlayerController* PlayerController)
 {
-	SetInventoryDataTable(InventoryItemDataTable);
-
 	if (!IsValid(EquipmentViewWidget))
 	{
-		CreateViewWidget(PlayerController, InventoryItemDataTable);
+		CreateViewWidget(PlayerController);
 	}
 
 	if (!EquipmentViewWidget->IsVisible())
@@ -977,7 +1001,7 @@ void UCharacterEquipmentComponent::OnThrowItemEnd()
 		return;
 	}
 
-	EquipmentAmmoArray[(int32)CurrentThrowableItem->GetAmmoType()] -= 1;
+	RemoveAmmo(CurrentThrowableItem->GetAmmoType(), 1);
 	OnCurrentThrowableAmmoChanged(EquipmentAmmoArray[(int32)CurrentThrowableItem->GetAmmoType()]);
 
 	if (bIsPrimaryItemEquipped)
@@ -1035,8 +1059,10 @@ void UCharacterEquipmentComponent::OnCurrentWeaponReloaded()
 	if (CurrentRangedWeapon.IsValid() && IsValid(BaseCharacter) && BaseCharacter->GetLocalRole() == ROLE_Authority)
 	{
 		const int32 ReloadedAmmo = GetAvailableAmmoForWeaponMagazine(CurrentRangedWeapon.Get());
-		EquipmentAmmoArray[(uint32)CurrentRangedWeapon->GetAmmoType()] -= ReloadedAmmo;
-		CurrentRangedWeapon->SetCurrentAmmo(CurrentRangedWeapon->GetCurrentAmmo() + ReloadedAmmo);
+		if (RemoveAmmo(CurrentRangedWeapon->GetAmmoType(), ReloadedAmmo))
+		{
+			CurrentRangedWeapon->SetCurrentAmmo(CurrentRangedWeapon->GetCurrentAmmo() + ReloadedAmmo);
+		}
 	}
 	BaseCharacter->OnWeaponReloaded();
 }

@@ -73,6 +73,10 @@ void AXyzBaseCharacter::BeginPlay()
 	CharacterAttributesComponent->OnDeathDelegate.AddUFunction(this, FName("OnDeath"));
 
 	SetupProgressBarWidget();
+
+	CharacterEquipmentComponent->SetInventoryItemDataTable(InventoryItemDataTable);
+	CharacterInventoryComponent->SetInventoryItemDataTable(InventoryItemDataTable);
+	CharacterEquipmentComponent->CreateLoadout();
 }
 
 void AXyzBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -1112,8 +1116,8 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 
 	if (!CharacterInventoryComponent->IsViewInventoryVisible() || !CharacterEquipmentComponent->IsViewEquipmentVisible())
 	{
-		CharacterInventoryComponent->OpenViewInventory(PlayerController, InventoryItemDataTable);
-		CharacterEquipmentComponent->OpenViewEquipment(PlayerController, InventoryItemDataTable);
+		CharacterInventoryComponent->OpenViewInventory(PlayerController);
+		CharacterEquipmentComponent->OpenViewEquipment(PlayerController);
 		PlayerController->SetInputMode(FInputModeGameAndUI{});
 		PlayerController->bShowMouseCursor = true;
 	}
@@ -1128,7 +1132,7 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 
 bool AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
 {
-	return CharacterInventoryComponent->AddInventoryItem(ItemType, Amount, InventoryItemDataTable);
+	return CharacterInventoryComponent->AddInventoryItem(ItemType, Amount);
 }
 
 void AXyzBaseCharacter::LineTraceInteractableObject()

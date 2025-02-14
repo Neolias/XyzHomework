@@ -19,7 +19,7 @@ class XYZHOMEWORK_API UInventorySlotWidget : public UUserWidget
 public:
 	void InitializeSlot(FInventorySlot& InventorySlot);
 	void UpdateView();
-	void UpdateView(TWeakObjectPtr<UInventoryItem> Item);
+	void UpdateItemIconAndCount(TWeakObjectPtr<UInventoryItem> NewItemData);
 	void SetItemIcon(UTexture2D* Icon);
 	void SetLinkedSlotItem(TWeakObjectPtr<UInventoryItem> NewItem);
 	FInventorySlot* GetLinkedSlot() const { return LinkedSlot; }

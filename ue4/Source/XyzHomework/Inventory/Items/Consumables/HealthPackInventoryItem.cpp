@@ -15,7 +15,7 @@ bool UHealthPackInventoryItem::Consume(APawn* Pawn)
 	if (IsValid(BaseCharacter))
 	{
 		BaseCharacter->GetCharacterAttributesComponent()->AddHealth(HealthRestoreAmount);
-		BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(ItemType, 1);
+		BaseCharacter->GetCharacterInventoryComponent()->RemoveInventoryItem(Description.InventoryItemType, 1);
 		return true;
 	}
 

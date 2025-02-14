@@ -31,9 +31,7 @@ void UInventorySlotWidget::UpdateView()
 
 	if (LinkedSlot->Item.IsValid())
 	{
-		LinkedSlot->Item->SetPreviousInventorySlotWidget(this);
-
-		ItemIcon->SetBrushFromTexture(LinkedSlot->Item->GetDescription().Icon);
+		ItemIcon->SetBrushFromTexture(LinkedSlot->Item->GetItemDescription().Icon);
 		if (LinkedSlot->Item->CanStackItems())
 		{
 			const FText CountText = FText::FromString(FString::FromInt(LinkedSlot->Item->GetCount()));
@@ -51,17 +49,17 @@ void UInventorySlotWidget::UpdateView()
 	}
 }
 
-void UInventorySlotWidget::UpdateView(TWeakObjectPtr<UInventoryItem> NewViewData)
+void UInventorySlotWidget::UpdateItemIconAndCount(TWeakObjectPtr<UInventoryItem> NewItemData)
 {
-	if (!NewViewData.IsValid())
+	if (!NewItemData.IsValid())
 	{
 		UpdateView();
 	}
 
-	ItemIcon->SetBrushFromTexture(NewViewData->GetDescription().Icon);
-	if (NewViewData->CanStackItems())
+	ItemIcon->SetBrushFromTexture(NewItemData->GetItemDescription().Icon);
+	if (NewItemData->CanStackItems())
 	{
-		const FText CountText = FText::FromString(FString::FromInt(NewViewData->GetCount()));
+		const FText CountText = FText::FromString(FString::FromInt(NewItemData->GetCount()));
 		ItemCount->SetText(CountText);
 	}
 	else
@@ -115,7 +113,7 @@ void UInventorySlotWidget::NativeOnDragDetected(const FGeometry& InGeometry, con
 
 	/* Some simplification for not define new widget for drag and drop operation  */
 	UInventorySlotWidget* DragWidget = CreateWidget<UInventorySlotWidget>(GetOwningPlayer(), GetClass());
-	DragWidget->UpdateView(LinkedSlot->Item);
+	DragWidget->UpdateItemIconAndCount(LinkedSlot->Item);
 
 	DragOperation->DefaultDragVisual = DragWidget;
 	DragOperation->Pivot = EDragPivot::MouseDown;
@@ -140,7 +138,7 @@ bool UInventorySlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDrag
 		return true;
 	}
 
-	const bool bCanStackItems = LinkedSlot->Item->GetItemType() == PayloadItem->GetItemType() && LinkedSlot->Item->GetAvailableSpaceInStack() > 0;
+	const bool bCanStackItems = LinkedSlot->Item->GetInventoryItemType() == PayloadItem->GetInventoryItemType() && LinkedSlot->Item->GetAvailableSpaceInStack() > 0;
 
 	return bCanStackItems ? StackSlotItems(PayloadItem) : SwapSlotItems(PayloadItem);
 }

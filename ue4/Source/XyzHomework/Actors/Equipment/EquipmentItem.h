@@ -19,7 +19,6 @@ public:
 	AEquipmentItem();
 	virtual void SetOwner(AActor* NewOwner) override;
 	EEquipmentItemType GetEquipmentItemType() const { return EquipmentItemType; }
-	EInventoryItemType GetInventoryItemType() const { return InventoryItemType; }
 	virtual EWeaponAmmoType GetAmmoType() { return EWeaponAmmoType::None; }
 	FName GetEquippedSocketName() const { return EquippedSocketName; }
 	FName GetUnequippedSocketName() const { return UnequippedSocketName; }
