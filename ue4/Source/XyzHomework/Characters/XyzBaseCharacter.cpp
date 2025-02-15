@@ -22,6 +22,7 @@
 #include "Actors/Interactive/InteractiveActor.h"
 #include "Actors/Interactive/Environment/Ladder.h"
 #include "Actors/Interactive/Environment/Zipline.h"
+#include "Actors/Interactive/PickupItems/PickupItem.h"
 #include "Components/WidgetComponent.h"
 #include "Components/CharacterComponents/CharacterInventoryComponent.h"
 #include "UI/Widgets/World/CharacterProgressBarWidget.h"
@@ -1133,6 +1134,34 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 bool AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
 {
 	return CharacterInventoryComponent->AddInventoryItem(ItemType, Amount);
+}
+
+void AXyzBaseCharacter::DropItem(EInventoryItemType ItemType, int32 Amount)
+{
+	const UDataTable* DataTable = LoadObject<UDataTable>(nullptr, *InventoryItemDataTable.GetUniqueID().GetAssetPathString());
+	if (IsValid(DataTable))
+	{
+		FString RowID = UEnum::GetDisplayValueAsText<EInventoryItemType>(ItemType).ToString();
+		const FInventoryTableRow* ItemData = DataTable->FindRow<FInventoryTableRow>(FName(RowID), TEXT("Find item data"));
+		if (ItemData)
+		{
+			FTransform SpawnTransform = GetActorTransform();
+			const float SpawnRadius = GetCapsuleComponent()->GetScaledCapsuleRadius() * 3;
+			const float PosX = FMath::RandRange(-SpawnRadius, SpawnRadius);
+			const float PosY = FMath::RandRange(-SpawnRadius, SpawnRadius);
+			SpawnTransform.AddToTranslation(FVector(PosX, PosY, -GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
+			const float Yaw = FMath::RandRange(-180.f, 180.f);
+			SpawnTransform.SetRotation(FRotator(0.f, Yaw, 0.f).Quaternion());
+			FActorSpawnParameters SpawnParameters;
+			SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+			APickupItem* PickupItem = GetWorld()->SpawnActor<APickupItem>(ItemData->InventoryItemDescription.PickUpItemClass, SpawnTransform, SpawnParameters);
+
+			if (IsValid(PickupItem))
+			{
+				PickupItem->SetAmount(Amount);
+			}
+		}
+	}
 }
 
 bool AXyzBaseCharacter::AddAmmoToInventory(EWeaponAmmoType AmmoType, int32 Amount)

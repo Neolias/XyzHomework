@@ -92,3 +92,12 @@ bool UInventoryItem::RemoveFromEquipment(APawn* Pawn, int32 EquipmentSlotIndex)
 
 	return false;
 }
+
+void UInventoryItem::DropItem(APawn* Pawn)
+{
+	AXyzBaseCharacter* BaseCharacter = Cast<AXyzBaseCharacter>(Pawn);
+	if (IsValid(BaseCharacter))
+	{
+		BaseCharacter->DropItem(Description.InventoryItemType, Count);
+	}
+}

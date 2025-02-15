@@ -145,7 +145,14 @@ bool UInventorySlotWidget::NativeOnDrop(const FGeometry& InGeometry, const FDrag
 
 void UInventorySlotWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
-	SetLinkedSlotItem(Cast<UInventoryItem>(InOperation->Payload));
+	const auto PayloadItem = TWeakObjectPtr<UInventoryItem>(Cast<UInventoryItem>(InOperation->Payload));
+	if (!PayloadItem.IsValid())
+	{
+		return;
+	}
+
+	APawn* ItemOwner = Cast<APawn>(PayloadItem->GetOuter());
+	PayloadItem->DropItem(ItemOwner);
 }
 
 bool UInventorySlotWidget::StackSlotItems(TWeakObjectPtr<UInventoryItem> OtherSlotItem)

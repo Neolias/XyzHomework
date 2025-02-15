@@ -27,6 +27,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EInventoryItemType InventoryItemType = EInventoryItemType::None;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<APickupItem> PickUpItemClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<AEquipmentItem> EquipmentItemClass;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bCanStackItems = false;
@@ -70,6 +72,7 @@ public:
 	virtual bool Consume(APawn* Pawn) { return false; }
 	virtual bool AddToEquipment(APawn* Pawn);
 	virtual bool RemoveFromEquipment(APawn* Pawn, int32 EquipmentSlotIndex);
+	virtual void DropItem(APawn* Pawn);
 
 protected:
 	FInventoryItemDescription Description;

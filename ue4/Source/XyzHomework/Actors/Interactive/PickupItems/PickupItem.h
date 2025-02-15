@@ -18,6 +18,7 @@ public:
 	virtual FName GetActionName() override;
 	virtual EInventoryItemType GetItemType() const { return ItemType; }
 	virtual void Interact(APawn* InteractingPawn) override;
+	virtual void SetAmount(const int32 NewAmount) { Amount = NewAmount; }
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interactable")
