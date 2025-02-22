@@ -9,6 +9,7 @@
 #include "Inventory/Items/InventoryItem.h"
 #include "CharacterEquipmentComponent.generated.h"
 
+class URadialMenuWidget;
 class UDataTable;
 class UEquipmentViewWidget;
 class AXyzProjectile;
@@ -81,6 +82,9 @@ public:
 	void OpenViewEquipment(APlayerController* PlayerController);
 	void CloseViewEquipment();
 	bool IsViewEquipmentVisible() const;
+	void OpenRadialMenu(APlayerController* PlayerController);
+	void CloseRadialMenu();
+	bool IsRadialMenuVisible();
 	void OnEquipmentSlotUpdated(int32 SlotIndex);
 
 protected:
@@ -96,6 +100,8 @@ protected:
 	TArray<FProjectilePool> ProjectilePools;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | Items")
 	TSubclassOf<UEquipmentViewWidget> EquipmentViewWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | Items")
+	TSubclassOf<URadialMenuWidget> RadialMenuWidgetClass;
 
 	UPROPERTY()
 	class AXyzBaseCharacter* BaseCharacter;
@@ -132,6 +138,8 @@ protected:
 
 	UPROPERTY()
 	UEquipmentViewWidget* EquipmentViewWidget;
+	UPROPERTY()
+	URadialMenuWidget* RadialMenuWidget;
 	TSoftObjectPtr<UDataTable> InventoryItemDataTable;
 
 	virtual void BeginPlay() override;
@@ -167,7 +175,8 @@ protected:
 
 	// Equipment Widgets
 
-	void CreateViewWidget(APlayerController* PlayerController);
+	void CreateEquipmentViewWidget(APlayerController* PlayerController);
+	void CreateRadialMenuWidget(APlayerController* PlayerController);
 	void InitializeInventoryItem(AEquipmentItem* EquipmentItem, int32 Count = 1) const;
 	EEquipmentItemSlot FindCompatibleSlot(AEquipmentItem* EquipmentItem);
 };

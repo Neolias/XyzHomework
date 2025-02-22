@@ -75,6 +75,8 @@ private:
 	void UseSecondaryMeleeAttack();
 	void InteractWithObject();
 	void UseInventory();
+	void UseRadialMenu();
+	void ConfirmRadialMenuSegment();
 
 	UFUNCTION()
 	void OnInteractableObjectFound(FName ActionName);

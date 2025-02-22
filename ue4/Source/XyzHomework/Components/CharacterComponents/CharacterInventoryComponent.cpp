@@ -64,7 +64,7 @@ void UCharacterInventoryComponent::OpenViewInventory(APlayerController* PlayerCo
 		CreateViewWidget(PlayerController);
 	}
 
-	if (!InventoryViewWidget->IsVisible())
+	if (IsValid(InventoryViewWidget) && !InventoryViewWidget->IsVisible())
 	{
 		InventoryViewWidget->AddToViewport();
 	}

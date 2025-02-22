@@ -577,6 +577,11 @@ void AXyzBaseCharacter::OnThrowItem()
 
 void AXyzBaseCharacter::ThrowItem()
 {
+	if (CharacterEquipmentComponent->IsRadialMenuVisible())
+	{
+		return;
+	}
+
 	if (CanThrowItem())
 	{
 		Server_ThrowItem();
@@ -1119,16 +1124,14 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 	{
 		CharacterInventoryComponent->OpenViewInventory(PlayerController);
 		CharacterEquipmentComponent->OpenViewEquipment(PlayerController);
-		PlayerController->SetInputMode(FInputModeGameAndUI{});
-		PlayerController->bShowMouseCursor = true;
 	}
 	else
 	{
 		CharacterInventoryComponent->CloseViewInventory();
 		CharacterEquipmentComponent->CloseViewEquipment();
-		PlayerController->SetInputMode(FInputModeGameOnly{});
-		PlayerController->bShowMouseCursor = false;
 	}
+
+	TogglePlayerMouseInput(PlayerController);
 }
 
 bool AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
@@ -1172,6 +1175,39 @@ bool AXyzBaseCharacter::AddAmmoToInventory(EWeaponAmmoType AmmoType, int32 Amoun
 int32 AXyzBaseCharacter::RemoveAmmoFromInventory(EWeaponAmmoType AmmoType, int32 Amount)
 {
 	return CharacterInventoryComponent->RemoveAmmoItem(AmmoType, Amount);
+}
+
+void AXyzBaseCharacter::UseRadialMenu(APlayerController* PlayerController)
+{
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+
+	if (!CharacterEquipmentComponent->IsRadialMenuVisible())
+	{
+		CharacterEquipmentComponent->OpenRadialMenu(PlayerController);
+	}
+	else
+	{
+		CharacterEquipmentComponent->CloseRadialMenu();
+	}
+
+	TogglePlayerMouseInput(PlayerController);
+}
+
+void AXyzBaseCharacter::TogglePlayerMouseInput(APlayerController* PlayerController)
+{
+	if (CharacterInventoryComponent->IsViewInventoryVisible() || CharacterEquipmentComponent->IsViewEquipmentVisible() || CharacterEquipmentComponent->IsRadialMenuVisible())
+	{
+		PlayerController->SetInputMode(FInputModeGameAndUI{});
+		PlayerController->bShowMouseCursor = true;
+	}
+	else
+	{
+		PlayerController->SetInputMode(FInputModeGameOnly{});
+		PlayerController->bShowMouseCursor = false;
+	}
 }
 
 void AXyzBaseCharacter::LineTraceInteractableObject()

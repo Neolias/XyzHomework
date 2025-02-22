@@ -12,6 +12,7 @@
 #include "Net/UnrealNetwork.h"
 #include "UI/Widgets/Equipment/EquipmentViewWidget.h"
 #include "Actors/Projectiles/ProjectilePool.h"
+#include "UI/Widgets/Equipment/RadialMenuWidget.h"
 
 UCharacterEquipmentComponent::UCharacterEquipmentComponent()
 {
@@ -847,7 +848,7 @@ int32 UCharacterEquipmentComponent::RemoveAmmo(EWeaponAmmoType AmmoType, int32 A
 	return AmmoToRemove;
 }
 
-void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerController)
+void UCharacterEquipmentComponent::CreateEquipmentViewWidget(APlayerController* PlayerController)
 {
 	if (IsValid(EquipmentViewWidget))
 	{
@@ -861,6 +862,22 @@ void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerCon
 
 	EquipmentViewWidget = CreateWidget<UEquipmentViewWidget>(PlayerController, EquipmentViewWidgetClass);
 	EquipmentViewWidget->InitializeWidget(this);
+}
+
+void UCharacterEquipmentComponent::CreateRadialMenuWidget(APlayerController* PlayerController)
+{
+	if (IsValid(RadialMenuWidget))
+	{
+		return;
+	}
+
+	if (!IsValid(PlayerController) || !IsValid(RadialMenuWidgetClass))
+	{
+		return;
+	}
+
+	RadialMenuWidget = CreateWidget<URadialMenuWidget>(PlayerController, RadialMenuWidgetClass);
+	RadialMenuWidget->InitializeWidget(this);
 }
 
 void UCharacterEquipmentComponent::InitializeInventoryItem(AEquipmentItem* EquipmentItem, int32 Count/* = 1*/) const
@@ -885,10 +902,10 @@ void UCharacterEquipmentComponent::OpenViewEquipment(APlayerController* PlayerCo
 {
 	if (!IsValid(EquipmentViewWidget))
 	{
-		CreateViewWidget(PlayerController);
+		CreateEquipmentViewWidget(PlayerController);
 	}
 
-	if (!EquipmentViewWidget->IsVisible())
+	if (IsValid(EquipmentViewWidget) && !EquipmentViewWidget->IsVisible())
 	{
 		EquipmentViewWidget->AddToViewport();
 	}
@@ -907,6 +924,37 @@ bool UCharacterEquipmentComponent::IsViewEquipmentVisible() const
 	if (IsValid(EquipmentViewWidget))
 	{
 		return EquipmentViewWidget->IsVisible();
+	}
+	return false;
+}
+
+void UCharacterEquipmentComponent::OpenRadialMenu(APlayerController* PlayerController)
+{
+	if (!IsValid(RadialMenuWidget))
+	{
+		CreateRadialMenuWidget(PlayerController);
+	}
+
+	if (IsValid(RadialMenuWidget) && !RadialMenuWidget->IsVisible())
+	{
+		RadialMenuWidget->AddToViewport();
+		RadialMenuWidget->UpdateMenuSegmentWidgets();
+	}
+}
+
+void UCharacterEquipmentComponent::CloseRadialMenu()
+{
+	if (RadialMenuWidget->IsVisible())
+	{
+		RadialMenuWidget->RemoveFromParent();
+	}
+}
+
+bool UCharacterEquipmentComponent::IsRadialMenuVisible()
+{
+	if (IsValid(RadialMenuWidget))
+	{
+		return RadialMenuWidget->IsVisible();
 	}
 	return false;
 }

@@ -165,6 +165,8 @@ public:
 	virtual void DropItem(EInventoryItemType ItemType, int32 Amount);
 	virtual bool AddAmmoToInventory(EWeaponAmmoType AmmoType, int32 Amount);
 	virtual int32 RemoveAmmoFromInventory(EWeaponAmmoType AmmoType, int32 Amount);
+	virtual void UseRadialMenu(APlayerController* PlayerController);
+	virtual void TogglePlayerMouseInput(APlayerController* PlayerController);
 
 	// Wall Running
 
