@@ -6,10 +6,11 @@
 #include "Actors/Interactive/Interactable.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Actor.h"
+#include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
 #include "Door.generated.h"
 
 UCLASS()
-class XYZHOMEWORK_API ADoor : public AActor, public IInteractable
+class XYZHOMEWORK_API ADoor : public AActor, public IInteractable, public ISaveSubsystemInterface
 {
 	GENERATED_BODY()
 
@@ -21,6 +22,10 @@ public:
 	virtual bool HasOnInteractionCallback() override;
 	virtual FDelegateHandle AddOnInteractionDelegate(UObject* Object, const FName& FunctionName) override;
 	virtual void RemoveOnInteractionDelegate(FDelegateHandle DelegateHandle) override;
+
+	//@ SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
 
 protected:
 	virtual void BeginPlay() override;
@@ -43,8 +48,8 @@ protected:
 	IInteractable::FOnInteraction OnInteraction;
 
 private:
-	bool bIsOpen = false;
 	UPROPERTY()
 	FTimeline DoorAnimTimeline;
-
+	UPROPERTY(SaveGame)
+	bool bIsOpen = false;
 };

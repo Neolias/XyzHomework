@@ -39,3 +39,14 @@ bool AEquipmentItem::IsEquipmentSlotCompatible(const EEquipmentItemSlot Equipmen
 {
 	return CompatibleEquipmentSlots.Contains(EquipmentSlot);
 }
+
+void AEquipmentItem::OnLevelDeserialized_Implementation()
+{
+	if (!IsValid(Cast<ACharacter>(GetOwner())))
+	{
+		Destroy();
+		return;
+	}
+
+	SetActorRelativeTransform(FTransform(FRotator::ZeroRotator, FVector::ZeroVector));
+}

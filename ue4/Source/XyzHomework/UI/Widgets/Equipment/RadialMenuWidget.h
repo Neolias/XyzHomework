@@ -72,7 +72,7 @@ private:
 	// How far the mouse cursor should move to trigger recalculation
 	float MinMouseDeltaSquared = .1f;
 
-	// GRAPH SECTION START
+	//@ GRAPH SECTION START
 
 	void GenerateMenuSegmentGraph();
 	void AddChildNodes(const std::shared_ptr<FMenuSegment>& ParentNode, float ArcAngle, uint32 Depth = 0);
@@ -90,6 +90,6 @@ private:
 	// Dynamically calculated in NativeConstruct
 	uint32 MaxGraphDepth = 1;
 
-	// GRAPH SECTION END
+	//~ GRAPH SECTION END
 
 };

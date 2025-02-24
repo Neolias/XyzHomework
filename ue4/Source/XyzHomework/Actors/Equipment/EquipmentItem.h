@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "XyzGenericEnums.h"
 #include "GameFramework/Actor.h"
+#include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
 #include "EquipmentItem.generated.h"
 
 class UInventoryItem;
 class AXyzBaseCharacter;
 
 UCLASS()
-class XYZHOMEWORK_API AEquipmentItem : public AActor
+class XYZHOMEWORK_API AEquipmentItem : public AActor, public ISaveSubsystemInterface
 {
 	GENERATED_BODY()
 
@@ -34,6 +35,10 @@ public:
 	void SetLinkedInventoryItem(TWeakObjectPtr<UInventoryItem> InventoryItem);
 	const TArray<EEquipmentItemSlot>& GetCompatibleEquipmentSlots() const { return CompatibleEquipmentSlots; }
 	bool IsEquipmentSlotCompatible(EEquipmentItemSlot EquipmentSlot) const;
+
+	//@ SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Parameters | General")

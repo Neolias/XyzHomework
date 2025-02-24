@@ -51,6 +51,14 @@ void ARangedWeaponItem::Loadout()
 	}
 }
 
+void ARangedWeaponItem::OnAmmoChanged()
+{
+	if (OnAmmoChangedEvent.IsBound())
+	{
+		OnAmmoChangedEvent.Broadcast(CurrentWeaponAmmo[(int32)CurrentWeaponMode->AmmoType]);
+	}
+}
+
 bool ARangedWeaponItem::IsCurrentWeaponModeValid()
 {
 	if (!CurrentWeaponMode)
@@ -134,15 +142,12 @@ void ARangedWeaponItem::SetCurrentAmmo(const int32 AmmoAmount)
 	}
 
 	CurrentWeaponAmmo[(int32)CurrentWeaponMode->AmmoType] = AmmoAmount;
-	if (OnAmmoChanged.IsBound())
-	{
-		OnAmmoChanged.Broadcast(AmmoAmount);
-	}
+	OnAmmoChanged();
 }
 
 void ARangedWeaponItem::OnRep_CurrentWeaponAmmo(TArray<int32> CurrentWeaponAmmo_Old)
 {
-	if (OnAmmoChanged.IsBound())
+	if (OnAmmoChangedEvent.IsBound())
 	{
 		for (int i = 0; i < CurrentWeaponAmmo.Num(); ++i)
 		{
@@ -150,7 +155,7 @@ void ARangedWeaponItem::OnRep_CurrentWeaponAmmo(TArray<int32> CurrentWeaponAmmo_
 			{
 				continue;
 			}
-			OnAmmoChanged.Broadcast(CurrentWeaponAmmo[i]);
+			OnAmmoChangedEvent.Broadcast(CurrentWeaponAmmo[i]);
 		}
 	}
 }
@@ -239,9 +244,9 @@ void ARangedWeaponItem::OnMakeOneShot(const TArray<FShotInfo>& ShotInfoArray)
 		GetWorld()->GetTimerManager().SetTimer(OnShotEndTimer, this, &ARangedWeaponItem::OnShotEnd, 60.f / CurrentWeaponMode->FireRate, false);
 	}
 
-	if (CachedBaseCharacterOwner->GetLocalRole() == ROLE_Authority && CurrentWeaponAmmo[(int32)CurrentWeaponMode->AmmoType] <= 0 && OnMagazineEmpty.IsBound())
+	if (CachedBaseCharacterOwner->GetLocalRole() == ROLE_Authority && CurrentWeaponAmmo[(int32)CurrentWeaponMode->AmmoType] <= 0 && OnMagazineEmptyEvent.IsBound())
 	{
-		OnMagazineEmpty.Broadcast();
+		OnMagazineEmptyEvent.Broadcast();
 	}
 }
 
@@ -329,9 +334,9 @@ void ARangedWeaponItem::OnRep_IsReloading()
 	else
 	{
 		EndReload(false);
-		if (OnWeaponReloaded.IsBound())
+		if (OnWeaponReloadedEvent.IsBound())
 		{
-			OnWeaponReloaded.Broadcast();
+			OnWeaponReloadedEvent.Broadcast();
 		}
 	}
 }
@@ -395,9 +400,9 @@ void ARangedWeaponItem::EndReload(const bool bIsSuccess)
 		}
 	}
 
-	if (bIsSuccess && OnWeaponReloaded.IsBound())
+	if (bIsSuccess && OnWeaponReloadedEvent.IsBound())
 	{
-		OnWeaponReloaded.Broadcast();
+		OnWeaponReloadedEvent.Broadcast();
 	}
 
 	if (CurrentWeaponMode && CurrentWeaponMode->ReloadType == EWeaponReloadType::ByClip)
@@ -405,4 +410,10 @@ void ARangedWeaponItem::EndReload(const bool bIsSuccess)
 		GetWorld()->GetTimerManager().ClearTimer(ReloadTimer);
 	}
 	bIsReloading = false;
+}
+
+void ARangedWeaponItem::OnLevelDeserialized_Implementation()
+{
+	Super::OnLevelDeserialized_Implementation();
+	OnAmmoChanged();
 }

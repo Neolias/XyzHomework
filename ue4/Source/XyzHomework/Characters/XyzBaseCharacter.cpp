@@ -70,14 +70,18 @@ void AXyzBaseCharacter::BeginPlay()
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AXyzBaseCharacter::OnCharacterCapsuleHit);
 	OnReachedJumpApex.AddDynamic(this, &AXyzBaseCharacter::UpdateJumpApexHeight);
 	LandedDelegate.AddDynamic(this, &AXyzBaseCharacter::OnCharacterLanded);
-	CharacterAttributesComponent->OutOfStaminaEventSignature.AddDynamic(this, &AXyzBaseCharacter::OnOutOfStaminaEvent);
-	CharacterAttributesComponent->OnDeathDelegate.AddUFunction(this, FName("OnDeath"));
+	CharacterAttributesComponent->OnOutOfStaminaEvent.AddDynamic(this, &AXyzBaseCharacter::OnOutOfStamina);
+	CharacterAttributesComponent->OnDeathEvent.AddUFunction(this, FName("OnDeath"));
 
 	SetupProgressBarWidget();
 
 	CharacterEquipmentComponent->SetInventoryItemDataTable(InventoryItemDataTable);
 	CharacterInventoryComponent->SetInventoryItemDataTable(InventoryItemDataTable);
-	CharacterEquipmentComponent->CreateLoadout();
+
+	if (GetRemoteRole() != ROLE_Authority)
+	{
+		CharacterEquipmentComponent->CreateLoadout();
+	}
 }
 
 void AXyzBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -107,6 +111,10 @@ void AXyzBaseCharacter::Tick(const float DeltaSeconds)
 	IKLeftFootOffset = FMath::FInterpTo(IKLeftFootOffset, GetIKOffsetForSocket(LeftFootSocketName), DeltaSeconds, IKInterpSpeed);
 	IKRightFootOffset = FMath::FInterpTo(IKRightFootOffset, GetIKOffsetForSocket(RightFootSocketName), DeltaSeconds, IKInterpSpeed);
 	IKPelvisOffset = FMath::FInterpTo(IKPelvisOffset, GetPelvisOffset(), DeltaSeconds, IKInterpSpeed);
+}
+
+void AXyzBaseCharacter::OnLevelDeserialized_Implementation()
+{
 }
 
 // Overrides
@@ -202,8 +210,8 @@ void AXyzBaseCharacter::SetupProgressBarWidget()
 		WidgetComponent->SetVisibility(false);
 	}
 
-	CharacterAttributesComponent->OnHealthChanged.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
-	CharacterAttributesComponent->OnDeathDelegate.AddLambda([=](bool bShouldPlayAnimation) { WidgetComponent->SetVisibility(false); });
+	CharacterAttributesComponent->OnHealthChangedEvent.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
+	CharacterAttributesComponent->OnDeathEvent.AddLambda([=](bool bShouldPlayAnimation) { WidgetComponent->SetVisibility(false); });
 	ProgressBarWidget->SetHealthProgressBar(CharacterAttributesComponent->GetHealthPercentage());
 }
 
@@ -809,7 +817,7 @@ void AXyzBaseCharacter::OnStopSlide(const float HalfHeightAdjust, const float Sc
 
 // OutOfStamina
 
-void AXyzBaseCharacter::OnOutOfStaminaEvent(const bool bIsOutOfStamina)
+void AXyzBaseCharacter::OnOutOfStamina(const bool bIsOutOfStamina)
 {
 	if (bIsOutOfStamina)
 	{

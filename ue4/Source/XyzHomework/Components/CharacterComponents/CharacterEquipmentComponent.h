@@ -7,6 +7,7 @@
 #include "Actors/Projectiles/ProjectilePool.h"
 #include "Components/ActorComponent.h"
 #include "Inventory/Items/InventoryItem.h"
+#include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
 #include "CharacterEquipmentComponent.generated.h"
 
 class URadialMenuWidget;
@@ -25,7 +26,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnCurrentThrowableAmmoChangedEvent, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnEquipmentItemChangedEvent, const AEquipmentItem*)
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class XYZHOMEWORK_API UCharacterEquipmentComponent : public UActorComponent
+class XYZHOMEWORK_API UCharacterEquipmentComponent : public UActorComponent, public ISaveSubsystemInterface
 {
 	GENERATED_BODY()
 
@@ -87,6 +88,10 @@ public:
 	bool IsRadialMenuVisible();
 	void OnEquipmentSlotUpdated(int32 SlotIndex);
 
+	//@ SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Equipment | Loadout")
 	EEquipmentItemSlot DefaultEquipmentItemSlot = EEquipmentItemSlot::PrimaryWeapon;
@@ -109,15 +114,15 @@ protected:
 	TWeakObjectPtr<ARangedWeaponItem> CurrentRangedWeapon;
 	TWeakObjectPtr<AThrowableItem> CurrentThrowableItem;
 	TWeakObjectPtr<AMeleeWeaponItem> CurrentMeleeWeapon;
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentSlotIndex)
-	int32 CurrentSlotIndex = 0;
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentSlotIndex, SaveGame)
+	int32 CurrentSlotIndex = -1;
 	UFUNCTION()
 	void OnRep_CurrentSlotIndex(int32 CurrentSlotIndex_Old);
-	UPROPERTY(ReplicatedUsing = OnRep_EquippedItemsArray)
+	UPROPERTY(ReplicatedUsing = OnRep_EquippedItemsArray, SaveGame)
 	TArray<AEquipmentItem*> EquippedItemsArray;
 	UFUNCTION()
 	void OnRep_EquippedItemsArray();
-	UPROPERTY(ReplicatedUsing = OnRep_EquipmentAmmoArray)
+	UPROPERTY(ReplicatedUsing = OnRep_EquipmentAmmoArray, SaveGame)
 	TArray <uint32> EquipmentAmmoArray;
 	UFUNCTION()
 	void OnRep_EquipmentAmmoArray();

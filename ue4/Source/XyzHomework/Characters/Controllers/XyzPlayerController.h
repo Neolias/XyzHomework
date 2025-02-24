@@ -76,6 +76,8 @@ private:
 	void InteractWithObject();
 	void UseInventory();
 	void UseRadialMenu();
+	void QuickSaveGame();
+	void QuickLoadGame();
 
 	UFUNCTION()
 	void OnInteractableObjectFound(FName ActionName);

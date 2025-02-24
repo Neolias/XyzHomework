@@ -208,7 +208,7 @@ void URadialMenuWidget::OnNewSegmentSelected(int32 NewSegmentIndex)
 	}
 }
 
-// GRAPH SECTION START
+//@ GRAPH SECTION START
 
 void URadialMenuWidget::GenerateMenuSegmentGraph()
 {
@@ -286,4 +286,4 @@ std::shared_ptr<FMenuSegment> URadialMenuWidget::FindNode(const std::shared_ptr<
 	return nullptr;
 }
 
-// GRAPH SECTION END
+//~ GRAPH SECTION END

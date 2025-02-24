@@ -11,3 +11,13 @@ AAICharacter::AAICharacter(const FObjectInitializer& ObjectInitializer)
 {
 	PatrollingComponent = CreateDefaultSubobject<UAIPatrollingComponent>(TEXT("AIPatrollingComponent"));
 }
+
+void AAICharacter::OnLevelDeserialized_Implementation()
+{
+	Super::OnLevelDeserialized_Implementation();
+
+	if (!IsValid(GetController()))
+	{
+		SpawnDefaultController();
+	}
+}

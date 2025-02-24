@@ -7,6 +7,7 @@
 #include "Components/CharacterComponents/CharacterEquipmentComponent.h"
 #include "GameFramework/PlayerInput.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystems/SaveSubsystem/SaveSubsystem.h"
 #include "UI/Widgets/PlayerHUD/PlayerHUDWidget.h"
 #include "UI/Widgets/PlayerHUD/ReticleWidget.h"
 #include "UI/Widgets/PlayerHUD/WeaponAmmoWidget.h"
@@ -73,6 +74,8 @@ void AXyzPlayerController::SetupInputComponent()
 	InputComponent->BindAction("InteractWithObject", EInputEvent::IE_Pressed, this, &AXyzPlayerController::InteractWithObject);
 	InputComponent->BindAction("UseInventory", EInputEvent::IE_Pressed, this, &AXyzPlayerController::UseInventory);
 	InputComponent->BindAction("UseRadialMenu", EInputEvent::IE_Pressed, this, &AXyzPlayerController::UseRadialMenu);
+	InputComponent->BindAction("QuickSaveGame", EInputEvent::IE_Pressed, this, &AXyzPlayerController::QuickSaveGame);
+	InputComponent->BindAction("QuickLoadGame", EInputEvent::IE_Pressed, this, &AXyzPlayerController::QuickLoadGame);
 
 	InputComponent->BindAxis("TurnAtRate", this, &AXyzPlayerController::TurnAtRate);
 	InputComponent->BindAxis("LookUpAtRate", this, &AXyzPlayerController::LookUpAtRate);
@@ -124,9 +127,9 @@ void AXyzPlayerController::CreateAndInitializeHUDWidgets()
 			UCharacterAttributesComponent* CharacterAttributesComponent = CachedBaseCharacter->GetCharacterAttributesComponent();
 			if (IsValid(CharacterAttributesComponent))
 			{
-				CharacterAttributesComponent->OnHealthChanged.AddUFunction(CharacterAttributesWidget, FName("OnHealthChanged"));
-				CharacterAttributesComponent->OnStaminaChanged.AddUFunction(CharacterAttributesWidget, FName("OnStaminaChanged"));
-				CharacterAttributesComponent->OnOxygenChanged.AddUFunction(CharacterAttributesWidget, FName("OnOxygenChanged"));
+				CharacterAttributesComponent->OnHealthChangedEvent.AddUFunction(CharacterAttributesWidget, FName("OnHealthChanged"));
+				CharacterAttributesComponent->OnStaminaChangedEvent.AddUFunction(CharacterAttributesWidget, FName("OnStaminaChanged"));
+				CharacterAttributesComponent->OnOxygenChangedEvent.AddUFunction(CharacterAttributesWidget, FName("OnOxygenChanged"));
 			}
 		}
 
@@ -136,9 +139,9 @@ void AXyzPlayerController::CreateAndInitializeHUDWidgets()
 			UCharacterAttributesComponent* CharacterAttributesComponent = CachedBaseCharacter->GetCharacterAttributesComponent();
 			if (IsValid(CharacterAttributesComponent))
 			{
-				CharacterAttributesComponent->OnHealthChanged.AddUFunction(CharacterAttributesCenterWidget, FName("OnHealthChanged"));
-				CharacterAttributesComponent->OnStaminaChanged.AddUFunction(CharacterAttributesCenterWidget, FName("OnStaminaChanged"));
-				CharacterAttributesComponent->OnOxygenChanged.AddUFunction(CharacterAttributesCenterWidget, FName("OnOxygenChanged"));
+				CharacterAttributesComponent->OnHealthChangedEvent.AddUFunction(CharacterAttributesCenterWidget, FName("OnHealthChanged"));
+				CharacterAttributesComponent->OnStaminaChangedEvent.AddUFunction(CharacterAttributesCenterWidget, FName("OnStaminaChanged"));
+				CharacterAttributesComponent->OnOxygenChangedEvent.AddUFunction(CharacterAttributesCenterWidget, FName("OnOxygenChanged"));
 			}
 		}
 	}
@@ -327,6 +330,8 @@ void AXyzPlayerController::ReloadLevel()
 {
 	const UWorld* World = GetWorld();
 	const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(World);
+	USaveSubsystem* SaveSubsystem = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<USaveSubsystem>();
+	SaveSubsystem->GetGameSaveDataMutable().bIsSerialized = false; // force disable loading saved data
 	UGameplayStatics::OpenLevel(World, FName(*CurrentLevelName));
 }
 
@@ -448,6 +453,18 @@ void AXyzPlayerController::UseRadialMenu()
 	{
 		CachedBaseCharacter->UseRadialMenu(this);
 	}
+}
+
+void AXyzPlayerController::QuickSaveGame()
+{
+	 USaveSubsystem* SaveSubsystem = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<USaveSubsystem>();
+	 SaveSubsystem->SaveGame();
+}
+
+void AXyzPlayerController::QuickLoadGame()
+{
+	USaveSubsystem* SaveSubsystem = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<USaveSubsystem>();
+	SaveSubsystem->LoadLastGame();
 }
 
 void AXyzPlayerController::OnInteractableObjectFound(FName ActionName)

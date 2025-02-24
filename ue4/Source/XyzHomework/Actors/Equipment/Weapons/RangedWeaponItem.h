@@ -9,9 +9,9 @@
 
 class UWeaponMuzzleComponent;
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnAmmoChanged, int32)
-DECLARE_MULTICAST_DELEGATE(FOnWeaponReloaded)
-DECLARE_MULTICAST_DELEGATE(FOnMagazineEmpty)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAmmoChangedEvent, int32)
+DECLARE_MULTICAST_DELEGATE(FOnWeaponReloadedEvent)
+DECLARE_MULTICAST_DELEGATE(FOnMagazineEmptyEvent)
 
 USTRUCT(BlueprintType)
 struct FShotInfo
@@ -37,9 +37,9 @@ class XYZHOMEWORK_API ARangedWeaponItem : public AEquipmentItem
 	GENERATED_BODY()
 
 public:
-	FOnAmmoChanged OnAmmoChanged;
-	FOnWeaponReloaded OnWeaponReloaded;
-	FOnMagazineEmpty OnMagazineEmpty;
+	FOnAmmoChangedEvent OnAmmoChangedEvent;
+	FOnWeaponReloadedEvent OnWeaponReloadedEvent;
+	FOnMagazineEmptyEvent OnMagazineEmptyEvent;
 
 	ARangedWeaponItem();
 	virtual void BeginPlay() override;
@@ -73,6 +73,10 @@ public:
 	void StartReload();
 	void EndReload(bool bIsSuccess);
 
+	//@ SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Parameters | Modes", meta = (ClampMin = 0, UIMin = 0))
 	int32 DefaultWeaponModeIndex = 0;
@@ -103,17 +107,18 @@ protected:
 	UFUNCTION()
 	void OnRep_IsReloading();
 	bool bIsFiring = false;
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponModeIndex)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponModeIndex, SaveGame)
 	int32 CurrentWeaponModeIndex = 0;
 	UFUNCTION()
 	void OnRep_CurrentWeaponModeIndex();
 	const FWeaponModeParameters* CurrentWeaponMode;
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponAmmo)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponAmmo, SaveGame)
 	TArray<int32> CurrentWeaponAmmo;
 	UFUNCTION()
 	void OnRep_CurrentWeaponAmmo(TArray<int32> CurrentWeaponAmmo_Old);
 
 	void Loadout();
+	void OnAmmoChanged();
 	bool IsCurrentWeaponModeValid();
 	void OnMakeOneShot(const TArray<FShotInfo>& ShotInfoArray);
 	void OnShotEnd();

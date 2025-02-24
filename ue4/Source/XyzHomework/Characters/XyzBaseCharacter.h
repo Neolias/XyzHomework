@@ -6,6 +6,7 @@
 #include "GenericTeamAgentInterface.h"
 #include "XyzGenericStructs.h"
 #include "GameFramework/Character.h"
+#include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
 #include "XyzBaseCharacter.generated.h"
 
 class UDataTable;
@@ -27,7 +28,7 @@ typedef TArray<AInteractiveActor*, TInlineAllocator<10>> TInteractiveActorsArray
  *
  */
 UCLASS(Abstract, NotBlueprintable)
-class XYZHOMEWORK_API AXyzBaseCharacter : public ACharacter, public IGenericTeamAgentInterface
+class XYZHOMEWORK_API AXyzBaseCharacter : public ACharacter, public IGenericTeamAgentInterface, public ISaveSubsystemInterface
 {
 	GENERATED_BODY()
 
@@ -40,6 +41,10 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
+
+	//@ SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
 
 	class UXyzBaseCharMovementComponent* GetBaseCharacterMovementComponent() const { return BaseCharacterMovementComponent; }
 	UCharacterAttributesComponent* GetCharacterAttributesComponent() const { return CharacterAttributesComponent; }
@@ -319,7 +324,7 @@ protected:
 	virtual void OnOutOfStaminaStart() {};
 	virtual void OnOutOfStaminaEnd() {};
 	UFUNCTION()
-	virtual void OnOutOfStaminaEvent(const bool bIsOutOfStamina);
+	virtual void OnOutOfStamina(const bool bIsOutOfStamina);
 
 	// Crouching / Proning
 
