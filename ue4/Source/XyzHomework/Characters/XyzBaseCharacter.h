@@ -213,7 +213,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Movement | Mantling")
 	float MantlingDepth = 10.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Movement | Mantling", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float ForwardTraceDistance = 65.f;
+	float ForwardTraceDistance = 100.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "XYZ Character | Movement | Mantling")
 	FMantlingSettings HighMantleSettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "XYZ Character | Movement | Mantling")

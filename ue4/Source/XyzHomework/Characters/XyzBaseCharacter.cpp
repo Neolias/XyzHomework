@@ -985,6 +985,12 @@ bool AXyzBaseCharacter::DetectLedge(FLedgeDescription& LedgeDescription) const
 	FVector ForwardEndLocation = ForwardStartLocation + ForwardTraceDistance * ActorForwardVector.GetSafeNormal();
 	FCollisionShape ForwardCollisionShape = FCollisionShape::MakeCapsule(CachedCollisionCapsuleScaledRadius, ForwardCollisionCapsuleHalfHeight);
 
+	// Ensuring that nothing is blocking in the current position, e.g ceiling
+	if (World->OverlapBlockingTestByChannel(ForwardStartLocation, FQuat::Identity, CollisionChannel, ForwardCollisionShape, CollisionParams, FCollisionResponseParams::DefaultResponseParam))
+	{
+		return false;
+	}
+
 	if (World->SweepSingleByChannel(ForwardHitResult, ForwardStartLocation, ForwardEndLocation, FQuat::Identity, CollisionChannel, ForwardCollisionShape, CollisionParams, FCollisionResponseParams::DefaultResponseParam))
 	{
 		FHitResult DownwardHitResult;
