@@ -44,7 +44,7 @@ void AAICharacterController::ActorsPerceptionUpdated(const TArray<AActor*>& Upda
 {
 	//Super::ActorsPerceptionUpdated(UpdatedActors);
 
-	if ((CachedAICharacter.IsValid() && !CachedAICharacter->ShouldFollowEnemies()) || !IsValid(Blackboard))
+	if (!CachedAICharacter.IsValid() || !CachedAICharacter->ShouldFollowEnemies() || !IsValid(Blackboard))
 	{
 		return;
 	}
@@ -65,6 +65,7 @@ void AAICharacterController::ActorsPerceptionUpdated(const TArray<AActor*>& Upda
 	else
 	{
 		Blackboard->SetValueAsObject(AICharacterBTCurrentTargetName, nullptr);
+		CachedAICharacter->ResetWantsToAim(); // handles the case when the aiming BTService is aborted. Can be moved to a separate BTTask later
 		ClearFocus(EAIFocusPriority::Gameplay);
 		TryMoveToNextWayPoint();
 	}

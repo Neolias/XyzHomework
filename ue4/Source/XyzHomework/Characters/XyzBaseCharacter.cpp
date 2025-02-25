@@ -470,6 +470,11 @@ void AXyzBaseCharacter::OnWeaponReloaded()
 
 void AXyzBaseCharacter::UsePrimaryMeleeAttack()
 {
+	Server_UsePrimaryMeleeAttack();
+}
+
+void AXyzBaseCharacter::OnUsePrimaryMeleeAttack()
+{
 	if (BaseCharacterMovementComponent->IsMovingOnGround() && !CharacterEquipmentComponent->IsMeleeAttackActive())
 	{
 		AMeleeWeaponItem* MeleeWeaponItem = CharacterEquipmentComponent->GetCurrentMeleeWeapon();
@@ -480,7 +485,22 @@ void AXyzBaseCharacter::UsePrimaryMeleeAttack()
 	}
 }
 
+void AXyzBaseCharacter::Server_UsePrimaryMeleeAttack_Implementation()
+{
+	Multicast_UsePrimaryMeleeAttack();
+}
+
+void AXyzBaseCharacter::Multicast_UsePrimaryMeleeAttack_Implementation()
+{
+	OnUsePrimaryMeleeAttack();
+}
+
 void AXyzBaseCharacter::UseSecondaryMeleeAttack()
+{
+	Server_UseSecondaryMeleeAttack();
+}
+
+void AXyzBaseCharacter::OnUseSecondaryMeleeAttack()
 {
 	if (BaseCharacterMovementComponent->IsMovingOnGround() && !CharacterEquipmentComponent->IsMeleeAttackActive())
 	{
@@ -490,6 +510,16 @@ void AXyzBaseCharacter::UseSecondaryMeleeAttack()
 			MeleeWeaponItem->StartAttack(EMeleeAttackType::SecondaryAttack);
 		}
 	}
+}
+
+void AXyzBaseCharacter::Server_UseSecondaryMeleeAttack_Implementation()
+{
+	Multicast_UseSecondaryMeleeAttack();
+}
+
+void AXyzBaseCharacter::Multicast_UseSecondaryMeleeAttack_Implementation()
+{
+	OnUseSecondaryMeleeAttack();
 }
 
 // Equipment Items
@@ -585,11 +615,6 @@ void AXyzBaseCharacter::OnThrowItem()
 
 void AXyzBaseCharacter::ThrowItem()
 {
-	if (CharacterEquipmentComponent->IsRadialMenuVisible())
-	{
-		return;
-	}
-
 	if (CanThrowItem())
 	{
 		Server_ThrowItem();

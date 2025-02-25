@@ -304,6 +304,19 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_ThrowItem();
 
+	// Melee weapons
+
+	void OnUsePrimaryMeleeAttack();
+	UFUNCTION(Server, Reliable)
+	void Server_UsePrimaryMeleeAttack();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UsePrimaryMeleeAttack();
+	void OnUseSecondaryMeleeAttack();
+	UFUNCTION(Server, Reliable)
+	void Server_UseSecondaryMeleeAttack();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UseSecondaryMeleeAttack();
+
 	// Jumping / Landing
 
 	UFUNCTION()

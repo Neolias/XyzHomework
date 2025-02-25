@@ -163,7 +163,7 @@ void UCharacterEquipmentComponent::UpdateAmmoHUDWidgets()
 	}
 	else
 	{
-		// Display the primary item ammo even if no throwables are equipped
+		// Update the primary item ammo UI even if no throwables are equipped
 		AThrowableItem* PrimaryItem = Cast<AThrowableItem>(EquippedItemsArray[(uint32)EEquipmentItemSlot::PrimaryItem]);
 		if (IsValid(PrimaryItem))
 		{
