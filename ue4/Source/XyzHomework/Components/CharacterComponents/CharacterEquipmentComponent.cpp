@@ -12,6 +12,7 @@
 #include "Net/UnrealNetwork.h"
 #include "UI/Widgets/Equipment/EquipmentViewWidget.h"
 #include "Actors/Projectiles/ProjectilePool.h"
+#include "UI/Widgets/Equipment/RadialMenuWidget.h"
 
 UCharacterEquipmentComponent::UCharacterEquipmentComponent()
 {
@@ -42,10 +43,6 @@ void UCharacterEquipmentComponent::BeginPlay()
 	if (BaseCharacter->GetRemoteRole() != ROLE_Authority)
 	{
 		InstantiateProjectilePools(BaseCharacter);
-	}
-	if (BaseCharacter->IsLocallyControlled())
-	{
-		UpdateAmmoHUDWidgets();
 	}
 }
 
@@ -166,7 +163,7 @@ void UCharacterEquipmentComponent::UpdateAmmoHUDWidgets()
 	}
 	else
 	{
-		// Display the primary item ammo even if no throwables are equipped
+		// Update the primary item ammo UI even if no throwables are equipped
 		AThrowableItem* PrimaryItem = Cast<AThrowableItem>(EquippedItemsArray[(uint32)EEquipmentItemSlot::PrimaryItem]);
 		if (IsValid(PrimaryItem))
 		{
@@ -181,13 +178,7 @@ void UCharacterEquipmentComponent::UpdateAmmoHUDWidgets()
 
 void UCharacterEquipmentComponent::CreateLoadout()
 {
-	if (!IsValid(BaseCharacter) || BaseCharacter->GetRemoteRole() == ROLE_Authority)
-	{
-		return;
-	}
-
-	USkeletalMeshComponent* SkeletalMesh = BaseCharacter->GetMesh();
-	if (!IsValid(SkeletalMesh))
+	if (!IsValid(BaseCharacter) || !IsValid(BaseCharacter->GetMesh()))
 	{
 		return;
 	}
@@ -204,11 +195,18 @@ void UCharacterEquipmentComponent::CreateLoadout()
 			continue;
 		}
 
-		LoadoutOneItem(SlotPair.Key, SlotPair.Value, SkeletalMesh);
+		LoadoutOneItem(SlotPair.Key, SlotPair.Value, BaseCharacter->GetMesh());
 	}
 
-	EquipFromDefaultItemSlot();
-	UpdateAmmoHUDWidgets();
+	if (CurrentSlotIndex == -1)
+	{
+		EquipFromDefaultItemSlot();
+	}
+
+	if (BaseCharacter->IsLocallyControlled())
+	{
+		UpdateAmmoHUDWidgets();
+	}
 }
 
 void UCharacterEquipmentComponent::LoadoutOneItem(EEquipmentItemSlot EquipmentSlot, TSubclassOf<AEquipmentItem> EquipmentItemClass, USkeletalMeshComponent* SkeletalMesh, int32 CountInSlot/* = -1*/)
@@ -396,6 +394,15 @@ void UCharacterEquipmentComponent::OnEquipmentSlotUpdated(int32 SlotIndex)
 	UpdateAmmoHUDWidgets();
 }
 
+void UCharacterEquipmentComponent::OnLevelDeserialized_Implementation()
+{
+	if (CurrentSlotIndex != (int32)DefaultEquipmentItemSlot)
+	{
+		UnequipCurrentItem();
+		EquipPreviousItemIfUnequipped();
+	}
+}
+
 bool UCharacterEquipmentComponent::RemoveEquipmentItem(int32 EquipmentSlotIndex)
 {
 	if (EquipmentSlotIndex > EquippedItemsArray.Num())
@@ -445,7 +452,7 @@ bool UCharacterEquipmentComponent::RemoveEquipmentItem(int32 EquipmentSlotIndex)
 
 void UCharacterEquipmentComponent::EquipFromDefaultItemSlot(const bool bShouldSkipAnimation/* = true*/)
 {
-	if (CurrentEquippedItem.IsValid() && (EEquipmentItemSlot)CurrentSlotIndex == DefaultEquipmentItemSlot)
+	if (CurrentEquippedItem.IsValid() && CurrentSlotIndex == (int32)DefaultEquipmentItemSlot)
 	{
 		return;
 	}
@@ -476,9 +483,9 @@ void UCharacterEquipmentComponent::DrawNextItem()
 	{
 		EquipItem(NextItem);
 	}
-	else if (CurrentSlotIndex == 0 && BaseCharacter->GetLocalRole() == ROLE_AutonomousProxy)
+	else if (CurrentSlotIndex < 1 && BaseCharacter->GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		Server_EquipItemBySlotType((EEquipmentItemSlot)CurrentSlotIndex);
+		Server_EquipItemBySlotType(EEquipmentItemSlot::None);
 	}
 }
 
@@ -494,9 +501,9 @@ void UCharacterEquipmentComponent::DrawPreviousItem()
 	{
 		EquipItem(PreviousItem);
 	}
-	else if (CurrentSlotIndex == 0 && BaseCharacter->GetLocalRole() == ROLE_AutonomousProxy)
+	else if (CurrentSlotIndex < 1 && BaseCharacter->GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		Server_EquipItemBySlotType((EEquipmentItemSlot)CurrentSlotIndex);
+		Server_EquipItemBySlotType(EEquipmentItemSlot::None);
 	}
 }
 
@@ -526,7 +533,7 @@ bool UCharacterEquipmentComponent::DecrementCurrentSlotIndex()
 	{
 		return false;
 	}
-	if (CurrentSlotIndex == -1)
+	if (CurrentSlotIndex < 0)
 	{
 		CurrentSlotIndex = EquippedItemsArray.Num() - 1;
 	}
@@ -578,7 +585,7 @@ void UCharacterEquipmentComponent::UnequipCurrentItem()
 
 void UCharacterEquipmentComponent::EquipPreviousItemIfUnequipped(const bool bShouldSkipAnimation/* = true*/)
 {
-	if (CurrentEquippedItem.IsValid())
+	if (CurrentEquippedItem.IsValid() || CurrentSlotIndex < 1)
 	{
 		return;
 	}
@@ -659,9 +666,9 @@ void UCharacterEquipmentComponent::UnequipItem(AEquipmentItem* EquipmentItem)
 	{
 		UnequippedRangedWeapon->StopFire();
 		UnequippedRangedWeapon->EndReload(false);
-		UnequippedRangedWeapon->OnAmmoChanged.Remove(OnAmmoChangedDelegate);
-		UnequippedRangedWeapon->OnWeaponReloaded.Remove(OnWeaponReloadedDelegate);
-		UnequippedRangedWeapon->OnMagazineEmpty.Remove(OnWeaponMagazineEmptyDelegate);
+		UnequippedRangedWeapon->OnAmmoChangedEvent.Remove(OnAmmoChangedDelegate);
+		UnequippedRangedWeapon->OnWeaponReloadedEvent.Remove(OnWeaponReloadedDelegate);
+		UnequippedRangedWeapon->OnMagazineEmptyEvent.Remove(OnWeaponMagazineEmptyDelegate);
 	}
 	else
 	{
@@ -714,9 +721,9 @@ void UCharacterEquipmentComponent::EquipItem(AEquipmentItem* EquipmentItem, cons
 	CurrentRangedWeapon = Cast<ARangedWeaponItem>(CurrentEquippedItem);
 	if (CurrentRangedWeapon.IsValid())
 	{
-		OnAmmoChangedDelegate = CurrentRangedWeapon->OnAmmoChanged.AddUFunction(this, FName("OnCurrentWeaponAmmoChanged"));
-		OnWeaponReloadedDelegate = CurrentRangedWeapon->OnWeaponReloaded.AddUFunction(this, FName("OnCurrentWeaponReloaded"));
-		OnWeaponMagazineEmptyDelegate = CurrentRangedWeapon->OnMagazineEmpty.AddUFunction(this, FName("OnWeaponMagazineEmpty"));
+		OnAmmoChangedDelegate = CurrentRangedWeapon->OnAmmoChangedEvent.AddUFunction(this, FName("OnCurrentWeaponAmmoChanged"));
+		OnWeaponReloadedDelegate = CurrentRangedWeapon->OnWeaponReloadedEvent.AddUFunction(this, FName("OnCurrentWeaponReloaded"));
+		OnWeaponMagazineEmptyDelegate = CurrentRangedWeapon->OnMagazineEmptyEvent.AddUFunction(this, FName("OnWeaponMagazineEmpty"));
 	}
 	else
 	{
@@ -756,6 +763,10 @@ void UCharacterEquipmentComponent::EquipItem(AEquipmentItem* EquipmentItem, cons
 
 	if (IsValid(BaseCharacter) && BaseCharacter->GetLocalRole() == ROLE_AutonomousProxy)
 	{
+		if (CurrentSlotIndex < 0)
+		{
+			CurrentSlotIndex = 0;
+		}
 		Server_EquipItemBySlotType((EEquipmentItemSlot)CurrentSlotIndex);
 	}
 }
@@ -847,7 +858,7 @@ int32 UCharacterEquipmentComponent::RemoveAmmo(EWeaponAmmoType AmmoType, int32 A
 	return AmmoToRemove;
 }
 
-void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerController)
+void UCharacterEquipmentComponent::CreateEquipmentViewWidget(APlayerController* PlayerController)
 {
 	if (IsValid(EquipmentViewWidget))
 	{
@@ -861,6 +872,22 @@ void UCharacterEquipmentComponent::CreateViewWidget(APlayerController* PlayerCon
 
 	EquipmentViewWidget = CreateWidget<UEquipmentViewWidget>(PlayerController, EquipmentViewWidgetClass);
 	EquipmentViewWidget->InitializeWidget(this);
+}
+
+void UCharacterEquipmentComponent::CreateRadialMenuWidget(APlayerController* PlayerController)
+{
+	if (IsValid(RadialMenuWidget))
+	{
+		return;
+	}
+
+	if (!IsValid(PlayerController) || !IsValid(RadialMenuWidgetClass))
+	{
+		return;
+	}
+
+	RadialMenuWidget = CreateWidget<URadialMenuWidget>(PlayerController, RadialMenuWidgetClass);
+	RadialMenuWidget->InitializeWidget(this);
 }
 
 void UCharacterEquipmentComponent::InitializeInventoryItem(AEquipmentItem* EquipmentItem, int32 Count/* = 1*/) const
@@ -885,10 +912,10 @@ void UCharacterEquipmentComponent::OpenViewEquipment(APlayerController* PlayerCo
 {
 	if (!IsValid(EquipmentViewWidget))
 	{
-		CreateViewWidget(PlayerController);
+		CreateEquipmentViewWidget(PlayerController);
 	}
 
-	if (!EquipmentViewWidget->IsVisible())
+	if (IsValid(EquipmentViewWidget) && !EquipmentViewWidget->IsVisible())
 	{
 		EquipmentViewWidget->AddToViewport();
 	}
@@ -907,6 +934,37 @@ bool UCharacterEquipmentComponent::IsViewEquipmentVisible() const
 	if (IsValid(EquipmentViewWidget))
 	{
 		return EquipmentViewWidget->IsVisible();
+	}
+	return false;
+}
+
+void UCharacterEquipmentComponent::OpenRadialMenu(APlayerController* PlayerController)
+{
+	if (!IsValid(RadialMenuWidget))
+	{
+		CreateRadialMenuWidget(PlayerController);
+	}
+
+	if (IsValid(RadialMenuWidget) && !RadialMenuWidget->IsVisible())
+	{
+		RadialMenuWidget->AddToViewport();
+		RadialMenuWidget->UpdateMenuSegmentWidgets();
+	}
+}
+
+void UCharacterEquipmentComponent::CloseRadialMenu()
+{
+	if (RadialMenuWidget->IsVisible())
+	{
+		RadialMenuWidget->RemoveFromParent();
+	}
+}
+
+bool UCharacterEquipmentComponent::IsRadialMenuVisible()
+{
+	if (IsValid(RadialMenuWidget))
+	{
+		return RadialMenuWidget->IsVisible();
 	}
 	return false;
 }
@@ -977,7 +1035,7 @@ void UCharacterEquipmentComponent::Server_EquipItemBySlotType_Implementation(con
 
 void UCharacterEquipmentComponent::OnRep_CurrentSlotIndex(const int32 CurrentSlotIndex_Old)
 {
-	if (CurrentSlotIndex == 0 && CurrentEquippedItem.IsValid())
+	if (CurrentSlotIndex < 1 && CurrentEquippedItem.IsValid())
 	{
 		UnequipItem(CurrentEquippedItem.Get());
 	}

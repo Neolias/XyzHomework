@@ -12,6 +12,7 @@
 #include "Components/MovementComponents/XyzBaseCharMovementComponent.h"
 #include "Actors/Interactive/Environment/Ladder.h"
 #include "Components/CharacterComponents/CharacterEquipmentComponent.h"
+#include "Subsystems/StreamingSubsystem/StreamingSubsystemUtils.h"
 
 APlayerCharacter::APlayerCharacter(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer)
@@ -55,6 +56,8 @@ void APlayerCharacter::BeginPlay()
 		TimelineUpdate.BindUObject(this, &APlayerCharacter::UpdateWallRunCameraTimeline);
 		WallRunCameraTimeline.AddInterpFloat(WallRunCameraTimelineCurve, TimelineUpdate);
 	}
+
+	UStreamingSubsystemUtils::CheckCharacterOverlapStreamingSubsystemVolume(this);
 }
 
 void APlayerCharacter::Tick(const float DeltaSeconds)

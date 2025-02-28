@@ -70,14 +70,18 @@ void AXyzBaseCharacter::BeginPlay()
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AXyzBaseCharacter::OnCharacterCapsuleHit);
 	OnReachedJumpApex.AddDynamic(this, &AXyzBaseCharacter::UpdateJumpApexHeight);
 	LandedDelegate.AddDynamic(this, &AXyzBaseCharacter::OnCharacterLanded);
-	CharacterAttributesComponent->OutOfStaminaEventSignature.AddDynamic(this, &AXyzBaseCharacter::OnOutOfStaminaEvent);
-	CharacterAttributesComponent->OnDeathDelegate.AddUFunction(this, FName("OnDeath"));
+	CharacterAttributesComponent->OnOutOfStaminaEvent.AddDynamic(this, &AXyzBaseCharacter::OnOutOfStamina);
+	CharacterAttributesComponent->OnDeathEvent.AddUFunction(this, FName("OnDeath"));
 
 	SetupProgressBarWidget();
 
 	CharacterEquipmentComponent->SetInventoryItemDataTable(InventoryItemDataTable);
 	CharacterInventoryComponent->SetInventoryItemDataTable(InventoryItemDataTable);
-	CharacterEquipmentComponent->CreateLoadout();
+
+	if (GetRemoteRole() != ROLE_Authority)
+	{
+		CharacterEquipmentComponent->CreateLoadout();
+	}
 }
 
 void AXyzBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -107,6 +111,10 @@ void AXyzBaseCharacter::Tick(const float DeltaSeconds)
 	IKLeftFootOffset = FMath::FInterpTo(IKLeftFootOffset, GetIKOffsetForSocket(LeftFootSocketName), DeltaSeconds, IKInterpSpeed);
 	IKRightFootOffset = FMath::FInterpTo(IKRightFootOffset, GetIKOffsetForSocket(RightFootSocketName), DeltaSeconds, IKInterpSpeed);
 	IKPelvisOffset = FMath::FInterpTo(IKPelvisOffset, GetPelvisOffset(), DeltaSeconds, IKInterpSpeed);
+}
+
+void AXyzBaseCharacter::OnLevelDeserialized_Implementation()
+{
 }
 
 // Overrides
@@ -202,8 +210,8 @@ void AXyzBaseCharacter::SetupProgressBarWidget()
 		WidgetComponent->SetVisibility(false);
 	}
 
-	CharacterAttributesComponent->OnHealthChanged.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
-	CharacterAttributesComponent->OnDeathDelegate.AddLambda([=](bool bShouldPlayAnimation) { WidgetComponent->SetVisibility(false); });
+	CharacterAttributesComponent->OnHealthChangedEvent.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
+	CharacterAttributesComponent->OnDeathEvent.AddLambda([=](bool bShouldPlayAnimation) { WidgetComponent->SetVisibility(false); });
 	ProgressBarWidget->SetHealthProgressBar(CharacterAttributesComponent->GetHealthPercentage());
 }
 
@@ -462,6 +470,11 @@ void AXyzBaseCharacter::OnWeaponReloaded()
 
 void AXyzBaseCharacter::UsePrimaryMeleeAttack()
 {
+	Server_UsePrimaryMeleeAttack();
+}
+
+void AXyzBaseCharacter::OnUsePrimaryMeleeAttack()
+{
 	if (BaseCharacterMovementComponent->IsMovingOnGround() && !CharacterEquipmentComponent->IsMeleeAttackActive())
 	{
 		AMeleeWeaponItem* MeleeWeaponItem = CharacterEquipmentComponent->GetCurrentMeleeWeapon();
@@ -472,7 +485,22 @@ void AXyzBaseCharacter::UsePrimaryMeleeAttack()
 	}
 }
 
+void AXyzBaseCharacter::Server_UsePrimaryMeleeAttack_Implementation()
+{
+	Multicast_UsePrimaryMeleeAttack();
+}
+
+void AXyzBaseCharacter::Multicast_UsePrimaryMeleeAttack_Implementation()
+{
+	OnUsePrimaryMeleeAttack();
+}
+
 void AXyzBaseCharacter::UseSecondaryMeleeAttack()
+{
+	Server_UseSecondaryMeleeAttack();
+}
+
+void AXyzBaseCharacter::OnUseSecondaryMeleeAttack()
 {
 	if (BaseCharacterMovementComponent->IsMovingOnGround() && !CharacterEquipmentComponent->IsMeleeAttackActive())
 	{
@@ -482,6 +510,16 @@ void AXyzBaseCharacter::UseSecondaryMeleeAttack()
 			MeleeWeaponItem->StartAttack(EMeleeAttackType::SecondaryAttack);
 		}
 	}
+}
+
+void AXyzBaseCharacter::Server_UseSecondaryMeleeAttack_Implementation()
+{
+	Multicast_UseSecondaryMeleeAttack();
+}
+
+void AXyzBaseCharacter::Multicast_UseSecondaryMeleeAttack_Implementation()
+{
+	OnUseSecondaryMeleeAttack();
 }
 
 // Equipment Items
@@ -804,7 +842,7 @@ void AXyzBaseCharacter::OnStopSlide(const float HalfHeightAdjust, const float Sc
 
 // OutOfStamina
 
-void AXyzBaseCharacter::OnOutOfStaminaEvent(const bool bIsOutOfStamina)
+void AXyzBaseCharacter::OnOutOfStamina(const bool bIsOutOfStamina)
 {
 	if (bIsOutOfStamina)
 	{
@@ -946,6 +984,12 @@ bool AXyzBaseCharacter::DetectLedge(FLedgeDescription& LedgeDescription) const
 	ActorForwardVector.Z = 0.f;
 	FVector ForwardEndLocation = ForwardStartLocation + ForwardTraceDistance * ActorForwardVector.GetSafeNormal();
 	FCollisionShape ForwardCollisionShape = FCollisionShape::MakeCapsule(CachedCollisionCapsuleScaledRadius, ForwardCollisionCapsuleHalfHeight);
+
+	// Ensuring that nothing is blocking in the current position, e.g ceiling
+	if (World->OverlapBlockingTestByChannel(ForwardStartLocation, FQuat::Identity, CollisionChannel, ForwardCollisionShape, CollisionParams, FCollisionResponseParams::DefaultResponseParam))
+	{
+		return false;
+	}
 
 	if (World->SweepSingleByChannel(ForwardHitResult, ForwardStartLocation, ForwardEndLocation, FQuat::Identity, CollisionChannel, ForwardCollisionShape, CollisionParams, FCollisionResponseParams::DefaultResponseParam))
 	{
@@ -1119,16 +1163,14 @@ void AXyzBaseCharacter::UseInventory(APlayerController* PlayerController)
 	{
 		CharacterInventoryComponent->OpenViewInventory(PlayerController);
 		CharacterEquipmentComponent->OpenViewEquipment(PlayerController);
-		PlayerController->SetInputMode(FInputModeGameAndUI{});
-		PlayerController->bShowMouseCursor = true;
 	}
 	else
 	{
 		CharacterInventoryComponent->CloseViewInventory();
 		CharacterEquipmentComponent->CloseViewEquipment();
-		PlayerController->SetInputMode(FInputModeGameOnly{});
-		PlayerController->bShowMouseCursor = false;
 	}
+
+	TogglePlayerMouseInput(PlayerController);
 }
 
 bool AXyzBaseCharacter::PickupItem(EInventoryItemType ItemType, int32 Amount)
@@ -1172,6 +1214,39 @@ bool AXyzBaseCharacter::AddAmmoToInventory(EWeaponAmmoType AmmoType, int32 Amoun
 int32 AXyzBaseCharacter::RemoveAmmoFromInventory(EWeaponAmmoType AmmoType, int32 Amount)
 {
 	return CharacterInventoryComponent->RemoveAmmoItem(AmmoType, Amount);
+}
+
+void AXyzBaseCharacter::UseRadialMenu(APlayerController* PlayerController)
+{
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+
+	if (!CharacterEquipmentComponent->IsRadialMenuVisible())
+	{
+		CharacterEquipmentComponent->OpenRadialMenu(PlayerController);
+	}
+	else
+	{
+		CharacterEquipmentComponent->CloseRadialMenu();
+	}
+
+	TogglePlayerMouseInput(PlayerController);
+}
+
+void AXyzBaseCharacter::TogglePlayerMouseInput(APlayerController* PlayerController)
+{
+	if (CharacterInventoryComponent->IsViewInventoryVisible() || CharacterEquipmentComponent->IsViewEquipmentVisible() || CharacterEquipmentComponent->IsRadialMenuVisible())
+	{
+		PlayerController->SetInputMode(FInputModeGameAndUI{});
+		PlayerController->bShowMouseCursor = true;
+	}
+	else
+	{
+		PlayerController->SetInputMode(FInputModeGameOnly{});
+		PlayerController->bShowMouseCursor = false;
+	}
 }
 
 void AXyzBaseCharacter::LineTraceInteractableObject()

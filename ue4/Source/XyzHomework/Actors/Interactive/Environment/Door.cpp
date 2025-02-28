@@ -77,10 +77,18 @@ void ADoor::RemoveOnInteractionDelegate(FDelegateHandle DelegateHandle)
 	OnInteraction.Remove(DelegateHandle);
 }
 
+void ADoor::OnLevelDeserialized_Implementation()
+{
+	const float NewTimelineValue = bIsOpen ? 1.f : 0.f;
+	DoorAnimTimeline.SetNewTime(NewTimelineValue);
+	const float NewYawAngle = bIsOpen ? MinMaxAnimAngles.Y : MinMaxAnimAngles.X;
+	DoorPivot->SetRelativeRotation(FRotator(0.f, NewYawAngle, 0.f));
+}
+
 void ADoor::UpdateDoorAnimTimeline(float Alpha) const
 {
-	const float NewYawRotation = FMath::Lerp(MinMaxAnimAngles.X, MinMaxAnimAngles.Y, FMath::Clamp(Alpha, 0.0f, 1.0f));
-	DoorPivot->SetRelativeRotation(FRotator(0.f, NewYawRotation, 0.f));
+	const float NewYawAngle = FMath::Lerp(MinMaxAnimAngles.X, MinMaxAnimAngles.Y, FMath::Clamp(Alpha, 0.0f, 1.0f));
+	DoorPivot->SetRelativeRotation(FRotator(0.f, NewYawAngle, 0.f));
 }
 
 void ADoor::OnDoorAnimFinished()

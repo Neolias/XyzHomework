@@ -4,25 +4,26 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
 #include "CharacterAttributesComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeathDelegate, bool);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOutOfStaminaEventSignature, bool, IsOutOfStamina);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnStaminaChanged, float)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnOxygenChanged, float)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeathEventDelegate, bool);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnOutOfStaminaEvent, bool, bIsOutOfStamina);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnHealthChangedEvent, float)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnStaminaChangedEvent, float)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnOxygenChangedEvent, float)
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class XYZHOMEWORK_API UCharacterAttributesComponent : public UActorComponent
+class XYZHOMEWORK_API UCharacterAttributesComponent : public UActorComponent, public ISaveSubsystemInterface
 {
 	GENERATED_BODY()
 
 public:
-	FOnDeathDelegate OnDeathDelegate;
-	FOutOfStaminaEventSignature OutOfStaminaEventSignature;
-	FOnHealthChanged OnHealthChanged;
-	FOnStaminaChanged OnStaminaChanged;
-	FOnOxygenChanged OnOxygenChanged;
+	FOnDeathEventDelegate OnDeathEvent;
+	FOnOutOfStaminaEvent OnOutOfStaminaEvent;
+	FOnHealthChangedEvent OnHealthChangedEvent;
+	FOnStaminaChangedEvent OnStaminaChangedEvent;
+	FOnOxygenChangedEvent OnOxygenChangedEvent;
 
 	explicit UCharacterAttributesComponent();
 	virtual void BeginPlay() override;
@@ -39,6 +40,10 @@ public:
 	bool IsOutOfStamina() const { return bIsOutOfStamina; }
 	bool IsOutOfOxygen() const;
 	void TakeFallDamage(float FallHeight) const;
+
+	//@ SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Attributes | Debugging", meta = (ClampMin = 0.f, UIMin = 0.f))
@@ -78,7 +83,7 @@ private:
 	TWeakObjectPtr<class AXyzBaseCharacter> CachedBaseCharacter;
 	UPROPERTY()
 	class UXyzBaseCharMovementComponent* BaseCharacterMovementComponent;
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth, SaveGame)
 	float CurrentHealth = 0.f;
 	UFUNCTION()
 	void OnRep_CurrentHealth();
@@ -93,11 +98,15 @@ private:
 
 	UFUNCTION()
 	void OnDamageTaken(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
+	void OnHealthChanged();
 	void TryTriggerDeath(const UDamageType* DamageType, const bool bShouldPlayAnimation = false);
 	void TryTriggerDeath(const bool bShouldPlayAnimation = false);
+	void OnDeath(bool bShouldPlayAnimation = false);
 	void UpdateStaminaValue(float DeltaTime);
+	void OnStaminaChanged();
 	void TryChangeOutOfStaminaState();
 	void UpdateOxygenValue(float DeltaTime);
+	void OnOxygenChanged();
 	void TryToggleOutOfOxygenPain();
 	void TakeOutOfOxygenDamage() const;
 

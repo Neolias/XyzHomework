@@ -24,6 +24,10 @@ public:
 	UAIPatrollingComponent* GetPatrollingComponent() const { return PatrollingComponent; }
 	bool ShouldFollowEnemies() const { return bShouldFollowEnemies; }
 
+	//@ SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI Character | Behavior Tree")
 	UBehaviorTree* BehaviorTree;

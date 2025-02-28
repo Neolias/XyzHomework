@@ -60,10 +60,7 @@ void UCharacterAttributesComponent::TickComponent(const float DeltaTime, const E
 
 void UCharacterAttributesComponent::OnRep_CurrentHealth()
 {
-	if (OnHealthChanged.IsBound())
-	{
-		OnHealthChanged.Broadcast(CurrentHealth / MaxHealth);
-	}
+	OnHealthChanged();
 	TryTriggerDeath(true);
 }
 
@@ -78,36 +75,44 @@ void UCharacterAttributesComponent::OnDamageTaken(AActor* DamagedActor, const fl
 	}
 }
 
+void UCharacterAttributesComponent::OnHealthChanged()
+{
+	if (OnHealthChangedEvent.IsBound())
+	{
+		OnHealthChangedEvent.Broadcast(CurrentHealth / MaxHealth);
+	}
+}
+
 void UCharacterAttributesComponent::TryTriggerDeath(const UDamageType* DamageType, const bool bShouldPlayAnimation/* = false*/)
 {
 	if (!IsAlive())
 	{
 		bIsDeathTriggered = true;
-
-		if (OnDeathDelegate.IsBound())
+		if (bShouldPlayAnimation || DamageType->IsA<UPainVolumeDamageType>() || DamageType->IsA<UBulletDamageType>())
 		{
-			if (bShouldPlayAnimation || DamageType->IsA<UPainVolumeDamageType>() || DamageType->IsA<UBulletDamageType>())
-			{
-				OnDeathDelegate.Broadcast(true);
-			}
-			else
-			{
-				OnDeathDelegate.Broadcast(false);
-			}
+			OnDeath(true);
+		}
+		else
+		{
+			OnDeath(false);
 		}
 	}
 }
 
-void UCharacterAttributesComponent::TryTriggerDeath(const bool bShouldPlayAnimation)
+void UCharacterAttributesComponent::TryTriggerDeath(const bool bShouldPlayAnimation/* = false*/)
 {
 	if (!IsAlive())
 	{
 		bIsDeathTriggered = true;
+		OnDeath(bShouldPlayAnimation);
+	}
+}
 
-		if (OnDeathDelegate.IsBound())
-		{
-			OnDeathDelegate.Broadcast(bShouldPlayAnimation);
-		}
+void UCharacterAttributesComponent::OnDeath(bool bShouldPlayAnimation/* = false*/)
+{
+	if (OnDeathEvent.IsBound())
+	{
+		OnDeathEvent.Broadcast(bShouldPlayAnimation);
 	}
 }
 
@@ -150,19 +155,13 @@ void UCharacterAttributesComponent::AddHealth(float Amount)
 void UCharacterAttributesComponent::SetCurrentHealth(const float NewHealth)
 {
 	CurrentHealth = NewHealth;
-	if (OnHealthChanged.IsBound())
-	{
-		OnHealthChanged.Broadcast(CurrentHealth / MaxHealth);
-	}
+	OnHealthChanged();
 }
 
 void UCharacterAttributesComponent::SetCurrentStamina(const float NewStamina)
 {
 	CurrentStamina = NewStamina;
-	if (OnStaminaChanged.IsBound())
-	{
-		OnStaminaChanged.Broadcast(CurrentStamina / MaxStamina);
-	}
+	OnStaminaChanged();
 }
 
 bool UCharacterAttributesComponent::IsAlive() const
@@ -192,6 +191,11 @@ void UCharacterAttributesComponent::TakeFallDamage(const float FallHeight) const
 	}
 }
 
+void UCharacterAttributesComponent::OnLevelDeserialized_Implementation()
+{
+	OnHealthChanged();
+}
+
 void UCharacterAttributesComponent::UpdateStaminaValue(const float DeltaTime)
 {
 	const float Delta = BaseCharacterMovementComponent->IsSprinting() ? -SprintStaminaConsumptionVelocity : StaminaRestoreVelocity;
@@ -199,9 +203,17 @@ void UCharacterAttributesComponent::UpdateStaminaValue(const float DeltaTime)
 	SetCurrentStamina(NewStamina);
 }
 
+void UCharacterAttributesComponent::OnStaminaChanged()
+{
+	if (OnStaminaChangedEvent.IsBound())
+	{
+		OnStaminaChangedEvent.Broadcast(CurrentStamina / MaxStamina);
+	}
+}
+
 void UCharacterAttributesComponent::TryChangeOutOfStaminaState()
 {
-	if (!OutOfStaminaEventSignature.IsBound())
+	if (!OnOutOfStaminaEvent.IsBound())
 	{
 		return;
 	}
@@ -211,13 +223,13 @@ void UCharacterAttributesComponent::TryChangeOutOfStaminaState()
 		if (FMath::IsNearlyEqual(CurrentStamina, MaxStamina))
 		{
 			bIsOutOfStamina = false;
-			OutOfStaminaEventSignature.Broadcast(false);
+			OnOutOfStaminaEvent.Broadcast(false);
 		}
 	}
 	else if (FMath::IsNearlyZero(CurrentStamina))
 	{
 		bIsOutOfStamina = true;
-		OutOfStaminaEventSignature.Broadcast(true);
+		OnOutOfStaminaEvent.Broadcast(true);
 	}
 }
 
@@ -226,9 +238,14 @@ void UCharacterAttributesComponent::UpdateOxygenValue(const float DeltaTime)
 	const float Delta = BaseCharacterMovementComponent->IsSwimming() && BaseCharacterMovementComponent->IsSwimmingUnderWater() ? -SwimOxygenConsumptionVelocity : OxygenRestoreVelocity;
 	CurrentOxygen += Delta * DeltaTime;
 	CurrentOxygen = FMath::Clamp(CurrentOxygen, 0.f, MaxOxygen);
-	if (OnOxygenChanged.IsBound())
+	OnOxygenChanged();
+}
+
+void UCharacterAttributesComponent::OnOxygenChanged()
+{
+	if (OnOxygenChangedEvent.IsBound())
 	{
-		OnOxygenChanged.Broadcast(CurrentOxygen / MaxOxygen);
+		OnOxygenChangedEvent.Broadcast(CurrentOxygen / MaxOxygen);
 	}
 }
 

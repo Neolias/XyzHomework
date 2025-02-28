@@ -64,7 +64,7 @@ void UCharacterInventoryComponent::OpenViewInventory(APlayerController* PlayerCo
 		CreateViewWidget(PlayerController);
 	}
 
-	if (!InventoryViewWidget->IsVisible())
+	if (IsValid(InventoryViewWidget) && !InventoryViewWidget->IsVisible())
 	{
 		InventoryViewWidget->AddToViewport();
 	}
@@ -298,5 +298,5 @@ int32 UCharacterInventoryComponent::RemoveAmmoItem(EWeaponAmmoType AmmoType, int
 		}
 	}
 
-	return 0;
+	return Amount; // If ammo data is not found, returns requested amount to let ammo reloading proceed
 }

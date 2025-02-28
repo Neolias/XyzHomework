@@ -6,6 +6,7 @@
 #include "GenericTeamAgentInterface.h"
 #include "XyzGenericStructs.h"
 #include "GameFramework/Character.h"
+#include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
 #include "XyzBaseCharacter.generated.h"
 
 class UDataTable;
@@ -27,7 +28,7 @@ typedef TArray<AInteractiveActor*, TInlineAllocator<10>> TInteractiveActorsArray
  *
  */
 UCLASS(Abstract, NotBlueprintable)
-class XYZHOMEWORK_API AXyzBaseCharacter : public ACharacter, public IGenericTeamAgentInterface
+class XYZHOMEWORK_API AXyzBaseCharacter : public ACharacter, public IGenericTeamAgentInterface, public ISaveSubsystemInterface
 {
 	GENERATED_BODY()
 
@@ -40,6 +41,10 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
+
+	//@ SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
 
 	class UXyzBaseCharMovementComponent* GetBaseCharacterMovementComponent() const { return BaseCharacterMovementComponent; }
 	UCharacterAttributesComponent* GetCharacterAttributesComponent() const { return CharacterAttributesComponent; }
@@ -165,6 +170,8 @@ public:
 	virtual void DropItem(EInventoryItemType ItemType, int32 Amount);
 	virtual bool AddAmmoToInventory(EWeaponAmmoType AmmoType, int32 Amount);
 	virtual int32 RemoveAmmoFromInventory(EWeaponAmmoType AmmoType, int32 Amount);
+	virtual void UseRadialMenu(APlayerController* PlayerController);
+	virtual void TogglePlayerMouseInput(APlayerController* PlayerController);
 
 	// Wall Running
 
@@ -206,7 +213,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Movement | Mantling")
 	float MantlingDepth = 10.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Movement | Mantling", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float ForwardTraceDistance = 65.f;
+	float ForwardTraceDistance = 100.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "XYZ Character | Movement | Mantling")
 	FMantlingSettings HighMantleSettings;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "XYZ Character | Movement | Mantling")
@@ -297,6 +304,19 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_ThrowItem();
 
+	// Melee weapons
+
+	void OnUsePrimaryMeleeAttack();
+	UFUNCTION(Server, Reliable)
+	void Server_UsePrimaryMeleeAttack();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UsePrimaryMeleeAttack();
+	void OnUseSecondaryMeleeAttack();
+	UFUNCTION(Server, Reliable)
+	void Server_UseSecondaryMeleeAttack();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_UseSecondaryMeleeAttack();
+
 	// Jumping / Landing
 
 	UFUNCTION()
@@ -317,7 +337,7 @@ protected:
 	virtual void OnOutOfStaminaStart() {};
 	virtual void OnOutOfStaminaEnd() {};
 	UFUNCTION()
-	virtual void OnOutOfStaminaEvent(const bool bIsOutOfStamina);
+	virtual void OnOutOfStamina(const bool bIsOutOfStamina);
 
 	// Crouching / Proning
 
