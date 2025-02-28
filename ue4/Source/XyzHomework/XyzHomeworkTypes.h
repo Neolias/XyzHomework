@@ -20,3 +20,10 @@ const FName AICharacterBTCurrentTargetName = FName("CurrentTarget");
 const FName AICharacterBTNextLocationName = FName("NextLocation");
 const FName AICharacterBTCanSeeTargetName = FName("CanSeeTarget");
 const FName AICharacterBTDistanceToTargetName = FName("DistanceToTarget");
+
+const FName SignificanceTagCharacter = FName("Character");
+const float SignificanceValueVeryHigh = 0.f;
+const float SignificanceValueHigh = 1.f;
+const float SignificanceValueMedium = 10.f;
+const float SignificanceValueLow = 100.f;
+const float SignificanceValueVeryLow = 1000.f;

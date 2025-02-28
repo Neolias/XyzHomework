@@ -22,6 +22,7 @@ public:
 	{
 		bIgnoresFPCameraPitch = bIgnoreFPCameraPitch_In;
 	}
+	virtual void Tick(float DeltaTime) override;
 
 protected:
 	virtual void SetupInputComponent() override;

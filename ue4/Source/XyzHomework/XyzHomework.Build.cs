@@ -16,7 +16,8 @@ public class XyzHomework : ModuleRules
 			"Niagara", 
 			"UMG",
             "OnlineSubsystem",
-            "OnlineSubsystemUtils"
+            "OnlineSubsystemUtils",
+            "SignificanceManager"
         });
 
         DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");

@@ -28,10 +28,10 @@
 #include "UI/Widgets/World/CharacterProgressBarWidget.h"
 
 AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer)
-	:Super(ObjectInitializer.SetDefaultSubobjectClass<UXyzBaseCharMovementComponent>(ACharacter::CharacterMovementComponentName))
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UXyzBaseCharMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	checkf(GetCharacterMovement()->IsA<UXyzBaseCharMovementComponent>(), TEXT("AXyzBaseCharacter::AXyzBaseCharacter() should be used only with UXyzBaseCharMovementComponent"))
-		BaseCharacterMovementComponent = StaticCast<UXyzBaseCharMovementComponent*>(GetCharacterMovement());
+	BaseCharacterMovementComponent = StaticCast<UXyzBaseCharMovementComponent*>(GetCharacterMovement());
 
 	CharacterAttributesComponent = CreateDefaultSubobject<UCharacterAttributesComponent>(TEXT("CharacterAttributes"));
 	CharacterEquipmentComponent = CreateDefaultSubobject<UCharacterEquipmentComponent>(TEXT("CharacterEquipment"));
@@ -81,6 +81,28 @@ void AXyzBaseCharacter::BeginPlay()
 	if (GetRemoteRole() != ROLE_Authority)
 	{
 		CharacterEquipmentComponent->CreateLoadout();
+	}
+
+	if (bIsSignificanceEnabled)
+	{
+		USignificanceManager* SignificanceManager = FSignificanceManagerModule::Get(GetWorld());
+		if (SignificanceManager)
+		{
+			SignificanceManager->RegisterObject(
+				this,
+				SignificanceTagCharacter,
+				[this](USignificanceManager::FManagedObjectInfo* ObjectInfo, const FTransform& ViewPoint) -> float
+				{
+					return SignificanceFunction(ObjectInfo, ViewPoint);
+				},
+				USignificanceManager::EPostSignificanceType::Sequential,
+				[this](USignificanceManager::FManagedObjectInfo* ObjectInfo, float OldSignificance, float Significance,
+				       bool bFinal)
+				{
+					PostSignificanceFunction(ObjectInfo, OldSignificance, Significance, bFinal);
+				}
+			);
+		}
 	}
 }
 
@@ -213,6 +235,134 @@ void AXyzBaseCharacter::SetupProgressBarWidget()
 	CharacterAttributesComponent->OnHealthChangedEvent.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
 	CharacterAttributesComponent->OnDeathEvent.AddLambda([=](bool bShouldPlayAnimation) { WidgetComponent->SetVisibility(false); });
 	ProgressBarWidget->SetHealthProgressBar(CharacterAttributesComponent->GetHealthPercentage());
+}
+
+float AXyzBaseCharacter::SignificanceFunction(USignificanceManager::FManagedObjectInfo* ObjectInfo, const FTransform ViewPoint)
+{
+	if (ObjectInfo->GetTag() == SignificanceTagCharacter)
+	{
+		AXyzBaseCharacter* Character = StaticCast<AXyzBaseCharacter*>(ObjectInfo->GetObject());
+		if (!IsValid(Character))
+		{
+			return SignificanceValueVeryHigh;
+		}
+
+		if (Character->IsPlayerControlled() && Character->IsLocallyControlled())
+		{
+			return SignificanceValueVeryHigh;
+		}
+
+		float DistSquared = FVector::DistSquared(Character->GetActorLocation(), ViewPoint.GetLocation());
+		if (DistSquared <= FMath::Square(VeryHighSignificanceDistance))
+		{
+			return SignificanceValueVeryHigh;
+		}
+		else if (DistSquared <= FMath::Square(HighSignificanceDistance))
+		{
+			return SignificanceValueHigh;
+		}
+		else if (DistSquared <= FMath::Square(MediumSignificanceDistance))
+		{
+			return SignificanceValueMedium;
+		}
+		else if (DistSquared <= FMath::Square(LowSignificanceDistance))
+		{
+			return SignificanceValueLow;
+		}
+		else
+		{
+			return SignificanceValueVeryLow;
+		}
+	}
+	return SignificanceValueVeryHigh;
+}
+
+void AXyzBaseCharacter::PostSignificanceFunction(USignificanceManager::FManagedObjectInfo* ObjectInfo, float OldSignificance, float Significance, bool bFinal)
+{
+	if (OldSignificance == Significance || ObjectInfo->GetTag() != SignificanceTagCharacter)
+	{
+		return;
+	}
+
+	AXyzBaseCharacter* Character = StaticCast<AXyzBaseCharacter*>(ObjectInfo->GetObject());
+	if (!IsValid(Character))
+	{
+		return;
+	}
+
+	UCharacterMovementComponent* MovementComponent = Character->GetCharacterMovement();
+	AAIController* AIController = Character->GetController<AAIController>();
+	UWidgetComponent* Widget = Character->GetCharacterWidgetComponent();
+	
+	if (Significance == SignificanceValueVeryHigh)
+	{
+		MovementComponent->SetComponentTickInterval(0.f);
+		if (IsValid(Widget))
+		{
+			Widget->SetVisibility(true);
+		}
+		Character->GetMesh()->SetComponentTickEnabled(true);
+		Character->GetMesh()->SetComponentTickInterval(0.f);
+		if (IsValid(AIController))
+		{
+			AIController->SetActorTickInterval(0.f);
+		}
+	}
+	if (Significance == SignificanceValueHigh)
+	{
+		MovementComponent->SetComponentTickInterval(0.f);
+		if (IsValid(Widget))
+		{
+			Widget->SetVisibility(true);
+		}
+		Character->GetMesh()->SetComponentTickEnabled(true);
+		Character->GetMesh()->SetComponentTickInterval(0.05f);
+		if (IsValid(AIController))
+		{
+			AIController->SetActorTickInterval(0.f);
+		}
+	}
+	if (Significance == SignificanceValueMedium)
+	{
+		MovementComponent->SetComponentTickInterval(0.1f);
+		if (IsValid(Widget))
+		{
+			Widget->SetVisibility(false);
+		}
+		Character->GetMesh()->SetComponentTickEnabled(true);
+		Character->GetMesh()->SetComponentTickInterval(0.1f);
+		if (IsValid(AIController))
+		{
+			AIController->SetActorTickInterval(0.1f);
+		}
+	}
+	if (Significance == SignificanceValueLow)
+	{
+		MovementComponent->SetComponentTickInterval(1.f);
+		if (IsValid(Widget))
+		{
+			Widget->SetVisibility(false);
+		}
+		Character->GetMesh()->SetComponentTickEnabled(true);
+		Character->GetMesh()->SetComponentTickInterval(1.f);
+		if (IsValid(AIController))
+		{
+			AIController->SetActorTickInterval(1.f);
+		}
+	}
+	if (Significance == SignificanceValueVeryLow)
+	{
+		MovementComponent->SetComponentTickInterval(5.f);
+		if (IsValid(Widget))
+		{
+			Widget->SetVisibility(false);
+		}
+		Character->GetMesh()->SetComponentTickEnabled(false);
+		if (IsValid(AIController))
+		{
+			AIController->SetActorTickInterval(10.f);
+		}
+	}
 }
 
 void AXyzBaseCharacter::OnCharacterCapsuleHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -408,7 +558,6 @@ void AXyzBaseCharacter::StopWeaponFire()
 	if (ModeParameters->FireMode == EWeaponFireMode::Single)
 	{
 		CurrentRangedWeapon->StopFire();
-
 	}
 	else if (ModeParameters->FireMode == EWeaponFireMode::FullAuto)
 	{
@@ -952,7 +1101,7 @@ void AXyzBaseCharacter::OnEndProne(const float HalfHeightAdjust, const float Sca
 bool AXyzBaseCharacter::CanMantle() const
 {
 	return ((BaseCharacterMovementComponent->IsMovingOnGround() && !BaseCharacterMovementComponent->IsProne()
-		&& !BaseCharacterMovementComponent->IsCrouching() && !BaseCharacterMovementComponent->IsSliding()) || BaseCharacterMovementComponent->IsSwimming())
+			&& !BaseCharacterMovementComponent->IsCrouching() && !BaseCharacterMovementComponent->IsSliding()) || BaseCharacterMovementComponent->IsSwimming())
 		&& GetRootComponent() && !GetRootComponent()->IsSimulatingPhysics();
 }
 
@@ -1404,4 +1553,5 @@ FGenericTeamId AXyzBaseCharacter::GetGenericTeamId() const
 {
 	return FGenericTeamId((uint8)Team);
 }
+
 // ~IGenericTeamAgentInterface

@@ -33,7 +33,7 @@ protected:
 	UBehaviorTree* BehaviorTree;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI Character | Perception")
 	FAISenseAffiliationFilter AISenseAffiliationFilter;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI Character | Navigaton")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI Character | Navigaton")
 	UAIPatrollingComponent* PatrollingComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI Character | Navigaton")
 	bool bShouldFollowEnemies = true;

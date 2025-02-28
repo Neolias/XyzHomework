@@ -7,6 +7,7 @@
 #include "XyzGenericStructs.h"
 #include "GameFramework/Character.h"
 #include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
+#include "SignificanceManager.h"
 #include "XyzBaseCharacter.generated.h"
 
 class UDataTable;
@@ -17,6 +18,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnInteractableFound, FName)
 class UCharacterEquipmentComponent;
 class UGCBaseCharacterMovementComponent;
 class UCharacterAttributesComponent;
+class UWidgetComponent;
 class AInteractiveActor;
 class IInteractable;
 class AZipline;
@@ -50,6 +52,7 @@ public:
 	UCharacterAttributesComponent* GetCharacterAttributesComponent() const { return CharacterAttributesComponent; }
 	UCharacterEquipmentComponent* GetCharacterEquipmentComponent() const { return CharacterEquipmentComponent; }
 	UCharacterInventoryComponent* GetCharacterInventoryComponent() const { return CharacterInventoryComponent; }
+	UWidgetComponent* GetCharacterWidgetComponent() const { return WidgetComponent; }
 	virtual bool IsFirstPerson() const { return bIsFirstPerson; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetIKLeftFootOffset() const { return IKLeftFootOffset; }
@@ -195,7 +198,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
 	UCharacterInventoryComponent* CharacterInventoryComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
-	class UWidgetComponent* WidgetComponent;
+	UWidgetComponent* WidgetComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Team")
 	ETeam Team = ETeam::Enemy;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | General", meta = (ClampMin = 0.f, UIMin = 0.f))
@@ -232,7 +235,17 @@ protected:
 	float InteractableObjectRange = 500.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "XYZ Character | Inventory")
 	TSoftObjectPtr<UDataTable> InventoryItemDataTable;
-
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Significance")
+	bool bIsSignificanceEnabled = true;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Significance")
+	float VeryHighSignificanceDistance = 1000.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Significance")
+	float HighSignificanceDistance = 1500.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Significance")
+	float MediumSignificanceDistance = 3000.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Significance")
+	float LowSignificanceDistance = 6000.f;
+	
 	TWeakObjectPtr<class AXyzPlayerController> XyzPlayerController;
 	UPROPERTY()
 	UXyzBaseCharMovementComponent* BaseCharacterMovementComponent;
@@ -264,6 +277,8 @@ protected:
 	virtual void RecalculateBaseEyeHeight() override;
 	virtual bool IsAnimMontagePlaying();
 	virtual void SetupProgressBarWidget();
+	virtual float SignificanceFunction(USignificanceManager::FManagedObjectInfo* ObjectInfo, const FTransform ViewPoint);
+	virtual void PostSignificanceFunction(USignificanceManager::FManagedObjectInfo* ObjectInfo, float OldSignificance, float Significance, bool bFinal);
 
 	// Aiming
 

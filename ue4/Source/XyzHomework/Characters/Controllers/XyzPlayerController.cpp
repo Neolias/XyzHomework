@@ -12,6 +12,7 @@
 #include "UI/Widgets/PlayerHUD/ReticleWidget.h"
 #include "UI/Widgets/PlayerHUD/WeaponAmmoWidget.h"
 #include "UI/Widgets/PlayerHUD/CharacterAttributesWidget.h"
+#include "SignificanceManager.h"
 
 void AXyzPlayerController::SetPawn(APawn* InPawn)
 {
@@ -32,6 +33,22 @@ bool AXyzPlayerController::IgnoresFPCameraPitch() const
 		return !CachedBaseCharacter->IsFirstPerson() || bIgnoresFPCameraPitch;
 	}
 	return true;
+}
+
+void AXyzPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+	USignificanceManager* SignificanceManager = FSignificanceManagerModule::Get(GetWorld());
+	if (IsValid(SignificanceManager))
+	{
+		FVector ViewLocation;
+		FRotator ViewRotation;
+		GetPlayerViewPoint(ViewLocation, ViewRotation);
+		FTransform ViewTransform(ViewRotation, ViewLocation);
+		TArray<FTransform> ViewPoints = {ViewTransform};
+		SignificanceManager->Update(ViewPoints);
+	}
 }
 
 void AXyzPlayerController::SetupInputComponent()
