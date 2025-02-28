@@ -79,6 +79,8 @@ void ADoor::RemoveOnInteractionDelegate(FDelegateHandle DelegateHandle)
 
 void ADoor::OnLevelDeserialized_Implementation()
 {
+	const float NewTimelineValue = bIsOpen ? 1.f : 0.f;
+	DoorAnimTimeline.SetNewTime(NewTimelineValue);
 	const float NewYawAngle = bIsOpen ? MinMaxAnimAngles.Y : MinMaxAnimAngles.X;
 	DoorPivot->SetRelativeRotation(FRotator(0.f, NewYawAngle, 0.f));
 }

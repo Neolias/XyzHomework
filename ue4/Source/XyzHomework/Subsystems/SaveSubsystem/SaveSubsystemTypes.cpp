@@ -10,7 +10,7 @@ DEFINE_LOG_CATEGORY(LogSaveSubsystem);
 
 FSaveSubsystemArchive::FSaveSubsystemArchive(FArchive& InInnerArchive, bool bInLoadIfFindFails)
 	: FObjectAndNameAsStringProxyArchive(InInnerArchive, bInLoadIfFindFails)
-{
+{	
 	ArIsSaveGame = true;
 	ArNoDelta = true;
 }
