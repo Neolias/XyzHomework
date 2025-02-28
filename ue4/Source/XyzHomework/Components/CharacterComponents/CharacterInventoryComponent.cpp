@@ -199,8 +199,6 @@ int32 UCharacterInventoryComponent::RemoveInventoryItem(EInventoryItemType ItemT
 	TArray<FInventorySlot*> CompatibleItemSlots;
 	for (FInventorySlot& Slot : ItemSlots)
 	{
-		if (Slot.Item.IsValid() && Slot.Item->GetInventoryItemType() == ItemType)
-
 			if (Slot.Item.IsValid() && Slot.Item->GetInventoryItemType() == ItemType && Slot.Item->CanStackItems())
 			{
 				CompatibleItemSlots.Add(&Slot);
