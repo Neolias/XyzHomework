@@ -7,6 +7,7 @@
 #include "DrawDebugHelpers.h"
 #include "XyzHomeworkTypes.h"
 #include "AbilitySystem/XyzAbilitySystemComponent.h"
+#include "AbilitySystem/AttributeSets/XyzCharacterAttributeSet.h"
 #include "Actors/Equipment/Throwables/ThrowableItem.h"
 #include "Actors/Equipment/Weapons/MeleeWeaponItem.h"
 #include "Actors/Equipment/Weapons/RangedWeaponItem.h"
@@ -39,6 +40,8 @@ AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetCapsuleComponent());
 	AbilitySystemComponent = CreateDefaultSubobject<UXyzAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+
+	AttributeSet = CreateDefaultSubobject<UXyzCharacterAttributeSet>(TEXT("AttributeSet"));
 
 	BaseCharacterMovementComponent->CrouchedHalfHeight = 60.f;
 	BaseCharacterMovementComponent->bCanWalkOffLedgesWhenCrouching = 1;
@@ -1588,6 +1591,8 @@ void AXyzBaseCharacter::InitGameplayAbilitySystem(AController* NewController)
 
 		bAbilitiesAdded = true;
 	}
+
+	AbilitySystemComponent->TryActivateAbilitiesByTag(InitialActiveAbilities);
 }
 #pragma endregion}
 

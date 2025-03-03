@@ -11,25 +11,11 @@ void UCharacterAttributesWidget::OnHealthChanged(const float NewHealthPercentage
 void UCharacterAttributesWidget::OnStaminaChanged(const float NewStaminaPercentage)
 {
 	StaminaPercentage = NewStaminaPercentage;
-	if (StaminaPercentage < 1.f)
-	{
-		bIsStaminaBarVisible = true;
-	}
-	else
-	{
-		bIsStaminaBarVisible = false;
-	}
+	bIsStaminaBarVisible = StaminaPercentage < 1.f ? true : false;
 }
 
 void UCharacterAttributesWidget::OnOxygenChanged(const float NewOxygenPercentage)
 {
 	OxygenPercentage = NewOxygenPercentage;
-	if (OxygenPercentage < 1.f)
-	{
-		bIsOxygenBarVisible = true;
-	}
-	else
-	{
-		bIsOxygenBarVisible = false;
-	}
+	bIsOxygenBarVisible = OxygenPercentage < 1.f ? true : false;
 }

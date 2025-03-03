@@ -12,6 +12,7 @@
 #include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
 #include "XyzBaseCharacter.generated.h"
 
+class UXyzCharacterAttributeSet;
 class UGameplayAbility;
 class UDataTable;
 class UCharacterInventoryComponent;
@@ -194,6 +195,8 @@ public:
 	// IAbilitySystemInterface	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	//~ IAbilitySystemInterface
+
+	UXyzCharacterAttributeSet* GetCharacterAttributes() const { return AttributeSet; }
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
@@ -400,15 +403,19 @@ protected:
 	virtual float GetPelvisOffset() const;
 
 #pragma region Gameplay Abilities {
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
 	class UXyzAbilitySystemComponent* AbilitySystemComponent;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
+	UXyzCharacterAttributeSet* AttributeSet;
 	bool bAbilitiesAdded = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Abilities)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> Abilities;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Abilities)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
 	FGameplayTag SprintAbilityTag;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Abilities)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
 	FGameplayTag CrouchAbilityTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
+	FGameplayTagContainer InitialActiveAbilities;
 
 	void InitGameplayAbilitySystem(AController* NewController);
 #pragma endregion}

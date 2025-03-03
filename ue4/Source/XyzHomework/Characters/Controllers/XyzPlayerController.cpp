@@ -2,17 +2,18 @@
 
 #include "Characters/Controllers/XyzPlayerController.h"
 
+#include "SignificanceManager.h"
+#include "AbilitySystem/AttributeSets/XyzCharacterAttributeSet.h"
 #include "Characters/XyzBaseCharacter.h"
 #include "Components/CharacterComponents/CharacterAttributesComponent.h"
 #include "Components/CharacterComponents/CharacterEquipmentComponent.h"
 #include "GameFramework/PlayerInput.h"
 #include "Kismet/GameplayStatics.h"
 #include "Subsystems/SaveSubsystem/SaveSubsystem.h"
+#include "UI/Widgets/PlayerHUD/CharacterAttributesWidget.h"
 #include "UI/Widgets/PlayerHUD/PlayerHUDWidget.h"
 #include "UI/Widgets/PlayerHUD/ReticleWidget.h"
 #include "UI/Widgets/PlayerHUD/WeaponAmmoWidget.h"
-#include "UI/Widgets/PlayerHUD/CharacterAttributesWidget.h"
-#include "SignificanceManager.h"
 
 void AXyzPlayerController::SetPawn(APawn* InPawn)
 {
@@ -159,6 +160,11 @@ void AXyzPlayerController::CreateAndInitializeHUDWidgets()
 				CharacterAttributesComponent->OnHealthChangedEvent.AddUFunction(CharacterAttributesCenterWidget, FName("OnHealthChanged"));
 				CharacterAttributesComponent->OnStaminaChangedEvent.AddUFunction(CharacterAttributesCenterWidget, FName("OnStaminaChanged"));
 				CharacterAttributesComponent->OnOxygenChangedEvent.AddUFunction(CharacterAttributesCenterWidget, FName("OnOxygenChanged"));
+			}
+			UXyzCharacterAttributeSet* AttributeSet = CachedBaseCharacter->GetCharacterAttributes();
+			if (IsValid(AttributeSet))
+			{
+				AttributeSet->OnStaminaChangedEvent.AddUFunction(CharacterAttributesCenterWidget, FName("OnStaminaChanged"));
 			}
 		}
 	}

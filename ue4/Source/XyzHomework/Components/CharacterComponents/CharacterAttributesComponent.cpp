@@ -48,7 +48,7 @@ void UCharacterAttributesComponent::TickComponent(const float DeltaTime, const E
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	UpdateStaminaValue(DeltaTime);
+	//UpdateStaminaValue(DeltaTime);
 	TryChangeOutOfStaminaState();
 	UpdateOxygenValue(DeltaTime);
 	TryToggleOutOfOxygenPain();
