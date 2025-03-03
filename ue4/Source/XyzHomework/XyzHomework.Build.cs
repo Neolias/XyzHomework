@@ -17,7 +17,10 @@ public class XyzHomework : ModuleRules
 			"UMG",
             "OnlineSubsystem",
             "OnlineSubsystemUtils",
-            "SignificanceManager"
+            "SignificanceManager",
+            "GameplayTasks",
+            "GameplayAbilities",
+            "GameplayTags"
         });
 
         DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");

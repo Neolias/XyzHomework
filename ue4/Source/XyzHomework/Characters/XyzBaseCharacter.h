@@ -3,13 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
+#include "GameplayTagContainer.h"
 #include "GenericTeamAgentInterface.h"
+#include "SignificanceManager.h"
 #include "XyzGenericStructs.h"
 #include "GameFramework/Character.h"
 #include "Subsystems/SaveSubsystem/SaveSubsystemInterface.h"
-#include "SignificanceManager.h"
 #include "XyzBaseCharacter.generated.h"
 
+class UGameplayAbility;
 class UDataTable;
 class UCharacterInventoryComponent;
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingStateChanged, bool)
@@ -26,11 +29,8 @@ class ALadder;
 class AEquipmentItem;
 typedef TArray<AInteractiveActor*, TInlineAllocator<10>> TInteractiveActorsArray;
 
-/**
- *
- */
 UCLASS(Abstract, NotBlueprintable)
-class XYZHOMEWORK_API AXyzBaseCharacter : public ACharacter, public IGenericTeamAgentInterface, public ISaveSubsystemInterface
+class XYZHOMEWORK_API AXyzBaseCharacter : public ACharacter, public IGenericTeamAgentInterface, public ISaveSubsystemInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -43,10 +43,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
-
-	//@ SaveSubsystemInterface
-	virtual void OnLevelDeserialized_Implementation() override;
-	//~ SaveSubsystemInterface
 
 	class UXyzBaseCharMovementComponent* GetBaseCharacterMovementComponent() const { return BaseCharacterMovementComponent; }
 	UCharacterAttributesComponent* GetCharacterAttributesComponent() const { return CharacterAttributesComponent; }
@@ -66,17 +62,24 @@ public:
 
 	virtual void PossessedBy(AController* NewController) override;
 
+	// IGenericTeamAgentInterface	
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	// ~IGenericTeamAgentInterface
+
+	// SaveSubsystemInterface
+	virtual void OnLevelDeserialized_Implementation() override;
+	//~ SaveSubsystemInterface
+
 	// Movement
 
 	virtual void Jump() override;
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
-	virtual void MoveForward(float Value) {};
-	virtual void MoveRight(float Value) {};
-	virtual void Turn(float Value) {};
-	virtual void LookUp(float Value) {};
-	virtual void TurnAtRate(float Value) {};
-	virtual void LookUpAtRate(float Value) {};
-
+	virtual void MoveForward(float Value) {}
+	virtual void MoveRight(float Value) {}
+	virtual void Turn(float Value) {}
+	virtual void LookUp(float Value) {}
+	virtual void TurnAtRate(float Value) {}
+	virtual void LookUpAtRate(float Value) {}
 	// Aiming
 
 	bool IsAiming() const { return bIsAiming; }
@@ -121,10 +124,10 @@ public:
 
 	// Swimming
 
-	virtual void SwimForward(float Value) {};
-	virtual void SwimRight(float Value) {};
-	virtual void SwimUp(float Value) {};
-	virtual void Dive() {};
+	virtual void SwimForward(float Value) {}
+	virtual void SwimRight(float Value) {}
+	virtual void SwimUp(float Value) {}
+	virtual void Dive() {}
 
 	// Sprinting / Sliding
 
@@ -178,17 +181,19 @@ public:
 
 	// Wall Running
 
-	virtual void OnWallRunStart() {};
-	virtual void OnWallRunEnd() {};
+	virtual void OnWallRunStart() {}
+	virtual void OnWallRunEnd() {}
 	virtual void JumpOffRunnableWall();
 
 	// Death
 
 	virtual void EnableRagdoll();
 
-	// IGenericTeamAgentInterface
-	virtual FGenericTeamId GetGenericTeamId() const override;
-	// ~IGenericTeamAgentInterface
+	// Gameplay Abilities
+
+	// IAbilitySystemInterface	
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	//~ IAbilitySystemInterface
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "XYZ Character | Components")
@@ -245,7 +250,7 @@ protected:
 	float MediumSignificanceDistance = 3000.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "XYZ Character | Significance")
 	float LowSignificanceDistance = 6000.f;
-	
+
 	TWeakObjectPtr<class AXyzPlayerController> XyzPlayerController;
 	UPROPERTY()
 	UXyzBaseCharMovementComponent* BaseCharacterMovementComponent;
@@ -349,8 +354,8 @@ protected:
 	virtual void OnSprintStartInternal();
 	virtual void OnSprintStopInternal();
 	virtual void UpdateSliding() const;
-	virtual void OnOutOfStaminaStart() {};
-	virtual void OnOutOfStaminaEnd() {};
+	virtual void OnOutOfStaminaStart() {}
+	virtual void OnOutOfStaminaEnd() {}
 	UFUNCTION()
 	virtual void OnOutOfStamina(const bool bIsOutOfStamina);
 
@@ -387,10 +392,24 @@ protected:
 
 	UFUNCTION()
 	virtual void OnDeath(bool bShouldPlayAnimMontage);
-	virtual void OnDeathStarted() {};
+	virtual void OnDeathStarted() {}
 
 	// Inverse Kinematics
 
 	virtual float GetIKOffsetForSocket(const FName& SocketName) const;
 	virtual float GetPelvisOffset() const;
+
+#pragma region Gameplay Abilities {
+	UPROPERTY()
+	class UXyzAbilitySystemComponent* AbilitySystemComponent;
+	bool bAbilitiesAdded = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Abilities)
+	TArray<TSubclassOf<UGameplayAbility>> Abilities;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Abilities)
+	FGameplayTag SprintAbilityTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Abilities)
+	FGameplayTag CrouchAbilityTag;
+
+	void InitGameplayAbilitySystem(AController* NewController);
+#pragma endregion}
 };

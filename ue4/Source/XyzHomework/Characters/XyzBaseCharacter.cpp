@@ -5,26 +5,26 @@
 
 #include "AIController.h"
 #include "DrawDebugHelpers.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "Curves/CurveVector.h"
-#include "Kismet/KismetSystemLibrary.h"
-
 #include "XyzHomeworkTypes.h"
+#include "AbilitySystem/XyzAbilitySystemComponent.h"
 #include "Actors/Equipment/Throwables/ThrowableItem.h"
 #include "Actors/Equipment/Weapons/MeleeWeaponItem.h"
 #include "Actors/Equipment/Weapons/RangedWeaponItem.h"
 #include "Actors/Interactive/Interactable.h"
-#include "Controllers/XyzPlayerController.h"
-#include "Components/MovementComponents/XyzBaseCharMovementComponent.h"
-#include "Components/CharacterComponents/CharacterAttributesComponent.h"
-#include "Components/CharacterComponents/CharacterEquipmentComponent.h"
 #include "Actors/Interactive/InteractiveActor.h"
 #include "Actors/Interactive/Environment/Ladder.h"
 #include "Actors/Interactive/Environment/Zipline.h"
 #include "Actors/Interactive/PickupItems/PickupItem.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Components/CharacterComponents/CharacterAttributesComponent.h"
+#include "Components/CharacterComponents/CharacterEquipmentComponent.h"
 #include "Components/CharacterComponents/CharacterInventoryComponent.h"
+#include "Components/MovementComponents/XyzBaseCharMovementComponent.h"
+#include "Controllers/XyzPlayerController.h"
+#include "Curves/CurveVector.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "UI/Widgets/World/CharacterProgressBarWidget.h"
 
 AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer)
@@ -38,6 +38,7 @@ AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer
 	CharacterInventoryComponent = CreateDefaultSubobject<UCharacterInventoryComponent>(TEXT("CharacterInventory"));
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetCapsuleComponent());
+	AbilitySystemComponent = CreateDefaultSubobject<UXyzAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 
 	BaseCharacterMovementComponent->CrouchedHalfHeight = 60.f;
 	BaseCharacterMovementComponent->bCanWalkOffLedgesWhenCrouching = 1;
@@ -135,9 +136,7 @@ void AXyzBaseCharacter::Tick(const float DeltaSeconds)
 	IKPelvisOffset = FMath::FInterpTo(IKPelvisOffset, GetPelvisOffset(), DeltaSeconds, IKInterpSpeed);
 }
 
-void AXyzBaseCharacter::OnLevelDeserialized_Implementation()
-{
-}
+void AXyzBaseCharacter::OnLevelDeserialized_Implementation() {}
 
 // Overrides
 
@@ -159,6 +158,8 @@ void AXyzBaseCharacter::PossessedBy(AController* NewController)
 		const FGenericTeamId TeamId = (uint8)Team;
 		AIController->SetGenericTeamId(TeamId);
 	}
+
+	InitGameplayAbilitySystem(NewController);
 }
 
 void AXyzBaseCharacter::Jump()
@@ -293,7 +294,7 @@ void AXyzBaseCharacter::PostSignificanceFunction(USignificanceManager::FManagedO
 	UCharacterMovementComponent* MovementComponent = Character->GetCharacterMovement();
 	AAIController* AIController = Character->GetController<AAIController>();
 	UWidgetComponent* Widget = Character->GetCharacterWidgetComponent();
-	
+
 	if (Significance == SignificanceValueVeryHigh)
 	{
 		MovementComponent->SetComponentTickInterval(0.f);
@@ -369,6 +370,14 @@ void AXyzBaseCharacter::OnCharacterCapsuleHit(UPrimitiveComponent* HitComponent,
 {
 	BaseCharacterMovementComponent->StartWallRun(Hit);
 }
+
+// IGenericTeamAgentInterface
+FGenericTeamId AXyzBaseCharacter::GetGenericTeamId() const
+{
+	return FGenericTeamId((uint8)Team);
+}
+
+// ~IGenericTeamAgentInterface
 
 // Aiming
 
@@ -846,13 +855,13 @@ void AXyzBaseCharacter::OnHardLandEnd()
 
 bool AXyzBaseCharacter::CanSprint()
 {
-	return BaseCharacterMovementComponent->IsMovingOnGround() && !BaseCharacterMovementComponent->IsProne()
+	return BaseCharacterMovementComponent->IsMovingOnGround() /*&& !BaseCharacterMovementComponent->IsProne()*/
 		&& !CharacterAttributesComponent->IsOutOfStamina() && !IsAnimMontagePlaying();
 }
 
 void AXyzBaseCharacter::TryChangeSprintState()
 {
-	if (bIsSprintRequested && CanSprint())
+	/*if (bIsSprintRequested && CanSprint())
 	{
 		if (!BaseCharacterMovementComponent->IsSprinting())
 		{
@@ -870,6 +879,16 @@ void AXyzBaseCharacter::TryChangeSprintState()
 	else if (BaseCharacterMovementComponent->IsSprinting())
 	{
 		BaseCharacterMovementComponent->StopSprint();
+	}*/
+
+	const bool bIsSprintActive = AbilitySystemComponent->IsAbilityActive(SprintAbilityTag);
+	if (bIsSprintRequested && !bIsSprintActive && CanSprint())
+	{
+		AbilitySystemComponent->TryActivateAbilityWithTag(SprintAbilityTag);
+	}
+	else if (!bIsSprintRequested && bIsSprintActive)
+	{
+		AbilitySystemComponent->TryCancelAbilityWithTag(SprintAbilityTag);
 	}
 }
 
@@ -951,7 +970,6 @@ void AXyzBaseCharacter::OnStartSlide(const float HalfHeightAdjust, const float S
 		BaseTranslationOffset.Z = DefaultChar->GetBaseTranslationOffset().Z + HalfHeightAdjust;
 	}
 
-
 	AController* CharacterController = GetController();
 	if (IsValid(CharacterController))
 	{
@@ -1007,8 +1025,8 @@ void AXyzBaseCharacter::OnOutOfStamina(const bool bIsOutOfStamina)
 
 bool AXyzBaseCharacter::CanCrouch() const
 {
-	return BaseCharacterMovementComponent->IsMovingOnGround() && !BaseCharacterMovementComponent->IsSprinting() && !BaseCharacterMovementComponent->IsSliding()
-		&& !BaseCharacterMovementComponent->IsProne() && !CharacterAttributesComponent->IsOutOfStamina() && Super::CanCrouch();
+	return BaseCharacterMovementComponent->IsMovingOnGround() && /*!BaseCharacterMovementComponent->IsSprinting() && */!BaseCharacterMovementComponent->IsSliding()
+		/*&& !BaseCharacterMovementComponent->IsProne()*/ && !CharacterAttributesComponent->IsOutOfStamina() && Super::CanCrouch();
 }
 
 void AXyzBaseCharacter::OnStartCrouch(const float HalfHeightAdjust, const float ScaledHalfHeightAdjust)
@@ -1029,7 +1047,17 @@ void AXyzBaseCharacter::OnEndCrouch(const float HalfHeightAdjust, const float Sc
 
 void AXyzBaseCharacter::ChangeCrouchState()
 {
-	Crouch();
+	//Crouch();
+
+	const bool bIsCrouchActive = AbilitySystemComponent->IsAbilityActive(CrouchAbilityTag);
+	if (!bIsCrouchActive && CanCrouch())
+	{
+		AbilitySystemComponent->TryActivateAbilityWithTag(CrouchAbilityTag);
+	}
+	/*else if (bIsCrouchActive)
+	{
+		AbilitySystemComponent->TryCancelAbilityWithTag(CrouchAbilityTag);
+	}*/
 }
 
 // Proning
@@ -1547,11 +1575,26 @@ float AXyzBaseCharacter::GetPelvisOffset() const
 	return 0.f;
 }
 
-
-// IGenericTeamAgentInterface
-FGenericTeamId AXyzBaseCharacter::GetGenericTeamId() const
+#pragma region Gameplay Abilities {
+void AXyzBaseCharacter::InitGameplayAbilitySystem(AController* NewController)
 {
-	return FGenericTeamId((uint8)Team);
+	AbilitySystemComponent->InitAbilityActorInfo(NewController, this);
+	if (!bAbilitiesAdded)
+	{
+		for (const auto& AbilityClass : Abilities)
+		{
+			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass));
+		}
+
+		bAbilitiesAdded = true;
+	}
+}
+#pragma endregion}
+
+// IAbilitySystemInterface
+UAbilitySystemComponent* AXyzBaseCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
 }
 
-// ~IGenericTeamAgentInterface
+//~ IAbilitySystemInterface
