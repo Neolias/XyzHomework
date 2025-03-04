@@ -27,3 +27,5 @@ const float SignificanceValueHigh = 1.f;
 const float SignificanceValueMedium = 10.f;
 const float SignificanceValueLow = 100.f;
 const float SignificanceValueVeryLow = 1000.f;
+
+const FName AbilitiesAttributeHealth = FName("Abilities.Attributes.Health");

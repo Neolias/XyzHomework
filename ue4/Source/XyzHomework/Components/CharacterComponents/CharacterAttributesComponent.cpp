@@ -69,7 +69,7 @@ void UCharacterAttributesComponent::OnDamageTaken(AActor* DamagedActor, const fl
 	if (IsAlive())
 	{
 		const float NewHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
-		SetCurrentHealth(NewHealth);
+		//SetCurrentHealth(NewHealth);
 
 		TryTriggerDeath(DamageType);
 	}

@@ -40,7 +40,6 @@ AXyzBaseCharacter::AXyzBaseCharacter(const FObjectInitializer& ObjectInitializer
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetCapsuleComponent());
 	AbilitySystemComponent = CreateDefaultSubobject<UXyzAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-
 	AttributeSet = CreateDefaultSubobject<UXyzCharacterAttributeSet>(TEXT("AttributeSet"));
 
 	BaseCharacterMovementComponent->CrouchedHalfHeight = 60.f;
@@ -236,7 +235,8 @@ void AXyzBaseCharacter::SetupProgressBarWidget()
 		WidgetComponent->SetVisibility(false);
 	}
 
-	CharacterAttributesComponent->OnHealthChangedEvent.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
+	//CharacterAttributesComponent->OnHealthChangedEvent.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
+	AttributeSet->OnHealthChangedEvent.AddUObject(ProgressBarWidget, &UCharacterProgressBarWidget::SetHealthProgressBar);
 	CharacterAttributesComponent->OnDeathEvent.AddLambda([=](bool bShouldPlayAnimation) { WidgetComponent->SetVisibility(false); });
 	ProgressBarWidget->SetHealthProgressBar(CharacterAttributesComponent->GetHealthPercentage());
 }

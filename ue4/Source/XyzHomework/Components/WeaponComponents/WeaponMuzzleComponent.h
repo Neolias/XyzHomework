@@ -8,6 +8,7 @@
 #include "Components/SceneComponent.h"
 #include "WeaponMuzzleComponent.generated.h"
 
+class UGameplayEffect;
 class AExplosiveProjectile;
 class UNiagaraSystem;
 class AXyzProjectile;
@@ -26,7 +27,9 @@ public:
 protected:
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = "Muzzle Component | Projectiles")
 	TArray<FProjectilePool> ProjectilePools;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Muzzle Component | Damage")
+	TSubclassOf<UGameplayEffect> DamageEffectClass;
+	
 private:
 	TWeakObjectPtr<APawn> CachedOwningPawn;
 	const FWeaponModeParameters* ModeParameters;

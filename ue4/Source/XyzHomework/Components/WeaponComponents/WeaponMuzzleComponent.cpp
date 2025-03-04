@@ -5,12 +5,15 @@
 
 #include <Actors/Projectiles/ProjectilePool.h>
 
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "Components/DecalComponent.h"
 
 #include "DrawDebugHelpers.h"
+#include "GameplayEffect.h"
 #include "XyzHomeworkTypes.h"
 #include "Actors/Projectiles/ExplosiveProjectile.h"
 #include "Net/UnrealNetwork.h"
@@ -101,7 +104,7 @@ APawn* UWeaponMuzzleComponent::GetOwningPawn() const
 }
 
 void UWeaponMuzzleComponent::ShootProjectile(const TSubclassOf<AXyzProjectile> ProjectileClass, const FVector MuzzleLocation, const FVector ViewPointLocation,
-	const FRotator ViewPointRotation, const FVector EndLocation)
+                                             const FRotator ViewPointRotation, const FVector EndLocation)
 {
 	FProjectilePool* ProjectilePool = ProjectilePools.FindByPredicate([ProjectileClass](const FProjectilePool& Pool) { return Pool.ProjectileClass == ProjectileClass; });
 	if (!ProjectilePool)
@@ -152,7 +155,7 @@ void UWeaponMuzzleComponent::OnShootProjectile(AXyzProjectile* Projectile, const
 }
 
 FVector UWeaponMuzzleComponent::ShootHitScan(const FVector ViewPointLocation, const FRotator ViewPointRotation, FHitResult& HitResult,
-	const FVector MuzzleLocation, const FVector EndLocation)
+                                             const FVector MuzzleLocation, const FVector EndLocation)
 {
 	FCollisionQueryParams CollisionQueryParams;
 	CollisionQueryParams.AddIgnoredActor(GetOwningPawn());
@@ -212,21 +215,36 @@ void UWeaponMuzzleComponent::ProcessHit(const FVector MovementDirection, const F
 		return;
 	}
 
-	FPointDamageEvent DamageEvent;
-	DamageEvent.HitInfo = HitResult;
-	DamageEvent.ShotDirection = MovementDirection;
-	DamageEvent.DamageTypeClass = ModeParameters->DamageTypeClass;
 	AActor* DamagedActor = HitResult.GetActor();
 	if (IsValid(DamagedActor))
 	{
-		float DamageFallOff = 0.f;
+		/*float DamageFallOff = 0.f;
 		if (IsValid(ModeParameters->WeaponDamageFallOff))
 		{
 			const float Distance = FVector::Dist(GetComponentLocation(), HitResult.ImpactPoint);
 			DamageFallOff = ModeParameters->WeaponDamageFallOff->GetFloatValue(Distance / ModeParameters->WeaponRange);
 		}
 
-		DamagedActor->TakeDamage(ModeParameters->WeaponMaxDamage * DamageFallOff, DamageEvent, GetController(), PawnOwner);
+		FPointDamageEvent DamageEvent;
+		DamageEvent.HitInfo = HitResult;
+		DamageEvent.ShotDirection = MovementDirection;
+		DamageEvent.DamageTypeClass = ModeParameters->DamageTypeClass;
+		DamagedActor->TakeDamage(ModeParameters->WeaponMaxDamage * DamageFallOff, DamageEvent, GetController(), PawnOwner);*/
+
+		if (IsValid(DamageEffectClass))
+		{
+			IAbilitySystemInterface* AbilitySystemActor = Cast<IAbilitySystemInterface>(DamagedActor);
+			if (AbilitySystemActor)
+			{
+				UAbilitySystemComponent* AbilitySystem = AbilitySystemActor->GetAbilitySystemComponent();
+				UGameplayEffect* DamageEffect = DamageEffectClass->GetDefaultObject<UGameplayEffect>();
+				FGameplayEffectContext EffectContext(GetController(), PawnOwner);
+				FGameplayEffectSpec EffectSpec(DamageEffect, FGameplayEffectContextHandle(&EffectContext));
+				EffectSpec.SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(AbilitiesAttributeHealth), -ModeParameters->WeaponMaxDamage);
+
+				AbilitySystem->ApplyGameplayEffectSpecToSelf(EffectSpec);
+			}
+		}
 	}
 }
 
